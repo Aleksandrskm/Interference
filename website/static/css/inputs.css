@@ -1,0 +1,60 @@
+.input-wrapper {
+    margin-bottom: 16px;
+}
+
+.input-label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.input:focus {
+    outline: none;
+    border-color: var(--secondary-color);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.input:disabled {
+    background-color: var(--bg-tertiary);
+    cursor: not-allowed;
+}
+
+.monitoring-inputs {
+    margin-bottom: 20px;
+    padding: 16px;
+    background-color: var(--bg-tertiary);
+    border-radius: 8px;
+}
+
+/* Чекбоксы и радио */
+.checkbox-wrapper,
+.radio-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.checkbox-wrapper input,
+.radio-wrapper input {
+    width: auto;
+    margin: 0;
+    cursor: pointer;
+}
+
+.checkbox-wrapper label,
+.radio-wrapper label {
+    margin: 0;
+    cursor: pointer;
+}
