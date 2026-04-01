@@ -5,15 +5,22 @@
     box-shadow: var(--shadow-sm);
     padding: 20px;
     overflow-y: auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
 }
 
 .monitoring-panel .button {
     margin: 20px 0;
     width: 100%;
+    flex-shrink: 0;
 }
 
 .monitoring-article {
     margin-top: 20px;
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
 }
 
 .task-item {
@@ -40,4 +47,93 @@
     color: var(--text-secondary);
     font-family: var(--font-mono);
     font-size: 13px;
+    word-break: break-word;
+}
+
+/* ========== АДАПТИВНОСТЬ ========== */
+
+/* Планшеты (768px - 1024px) */
+@media (max-width: 1024px) and (min-width: 769px) {
+    .monitoring-panel {
+        padding: 16px;
+    }
+
+    .task-item {
+        padding: 14px;
+    }
+}
+
+/* Мобильные устройства (до 768px) */
+@media (max-width: 768px) {
+    .monitoring-panel {
+        padding: 12px;
+        border-radius: 8px;
+        min-height: 300px;
+        max-height: 400px;
+    }
+
+    .monitoring-panel .button {
+        margin: 16px 0;
+    }
+
+    .monitoring-article {
+        margin-top: 16px;
+    }
+
+    .task-item {
+        padding: 12px;
+        margin-bottom: 10px;
+    }
+
+    .task-item .field {
+        font-size: 13px;
+    }
+
+    .task-item .value {
+        font-size: 12px;
+    }
+}
+
+/* Мобильные (до 480px) */
+@media (max-width: 480px) {
+    .monitoring-panel {
+        padding: 10px;
+        max-height: 350px;
+    }
+
+    .monitoring-panel .button {
+        margin: 12px 0;
+    }
+
+    .task-item {
+        padding: 10px;
+    }
+
+    .task-item .field {
+        font-size: 12px;
+    }
+
+    .task-item .value {
+        font-size: 11px;
+    }
+}
+
+/* Очень маленькие (до 320px) */
+@media (max-width: 320px) {
+    .monitoring-panel {
+        padding: 8px;
+        max-height: 320px;
+    }
+
+    .task-item {
+        padding: 8px;
+    }
+
+    .task-item .field {
+        font-size: 11px;
+    }
+
+    .task-item .value {
+        font-size: 10px;
+    }
 }

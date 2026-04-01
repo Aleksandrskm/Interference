@@ -301,7 +301,7 @@ class SpectrumSetting extends Component {
 
         const { fr1, fr2, averages, gain } = this.state;
         this.paramsDisplay.innerHTML = `
-            📊 Текущие параметры: 
+            Текущие параметры: 
             частота ${fr1} - ${fr2} МГц | 
             усреднений: ${averages} | 
             усиление: ${gain} dB

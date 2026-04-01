@@ -14,6 +14,7 @@ class SidePanel extends Component {
         this.lastLoadParams = null;
         this.contentContainer = null;
         this.loadTimeout = null;
+        this.dataContentComponent = null; // Добавляем ссылку на DataContent
     }
 
     async loadData(force = false) {
@@ -114,33 +115,20 @@ class SidePanel extends Component {
             article.appendChild(statsDiv);
             article.appendChild(detailsDiv);
 
-            // Данные РСС
+            // ИСПОЛЬЗУЕМ DataContent компонент для отображения данных РСС
             if (this.data.rss_stats && this.data.rss_stats.length > 0) {
+                // Создаем экземпляр DataContent
+                if (!this.dataContentComponent) {
+                    this.dataContentComponent = new DataContent();
+                }
+
+                // Рендерим данные через DataContent
                 const rssSection = this.createElement('div', { className: 'rss-section' });
                 rssSection.innerHTML = '<h3>Данные РСС:</h3>';
 
-                this.data.rss_stats.forEach((rssData, index) => {
-                    const rssDiv = this.createElement('details', { className: 'rss-details' });
-                    const summary = this.createElement('summary', { className: 'rss-summary' }, `РСС ${index + 1} (ID: ${rssData.rss_id})`);
-
-                    const content = this.createElement('div', { className: 'rss-content' });
-                    content.innerHTML = `
-                        <div class="field">Количество измерений с обнаруженными помехами: ${rssData.spectrums_w_noises_cnt || 0}</div>
-                        <div class="field">Количество измерений без обнаруженных помех: ${rssData.spectrums_wo_noises_cnt || 0}</div>
-                        <div class="field">Количество задач измерений с обнаруженными помехами: ${rssData.sessions_w_noises_cnt || 0}</div>
-                        <div class="field">Количество задач измерений без обнаруженных помех: ${rssData.sessions_wo_noises_cnt || 0}</div>
-                        <div class="field">Количество критичных помех: ${rssData.crititcal_noises_cnt || 0}</div>
-                        <div class="field">Количество некритичных помех: ${rssData.no_critical_noises_cnt || 0}</div>
-                        <div class="field">Количество каналов в полосе: ${rssData.channels_cnt || 0}</div>
-                        <div class="field">Количество подавленных каналов: ${rssData.channels_suppressed || 0}</div>
-                        <div class="field">Количество каналов с ухудшением: ${rssData.channels_w_deterioration || 0}</div>
-                    `;
-
-                    rssDiv.appendChild(summary);
-                    rssDiv.appendChild(content);
-                    rssSection.appendChild(rssDiv);
-                });
-
+                // Используем метод renderWithData из DataContent
+                const dataContentElement = this.dataContentComponent.renderWithData(this.data);
+                rssSection.appendChild(dataContentElement);
                 article.appendChild(rssSection);
             }
 
@@ -199,6 +187,10 @@ class SidePanel extends Component {
     unmount() {
         if (this.loadTimeout) clearTimeout(this.loadTimeout);
         if (this.unsubscribe) this.unsubscribe();
+        // Очищаем компонент DataContent
+        if (this.dataContentComponent && this.dataContentComponent.unmount) {
+            this.dataContentComponent.unmount();
+        }
     }
 }
 

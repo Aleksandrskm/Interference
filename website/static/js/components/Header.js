@@ -25,7 +25,7 @@ class Header extends Component {
 
         const homeIcon = this.createElement('img', {
             className: 'home-icon',
-            src: 'assets/home.svg',
+            src: '../img/home.svg',
             alt: 'HomePage'
         });
 
@@ -41,7 +41,7 @@ class Header extends Component {
         const settingsBtn = this.createElement('button', { className: 'header-settings' });
         const settingsIcon = this.createElement('img', {
             className: 'settings-icon',
-            src: 'assets/gears.svg',
+            src: '../img/gear.svg',
             alt: 'Настройки'
         });
         settingsBtn.appendChild(settingsIcon);

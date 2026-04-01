@@ -20,7 +20,7 @@ class SpectrogrammChart extends Component {
         const container = this.createElement('div', { className: 'spectrogramm-chart' });
         this.chartContainer = this.createElement('div', {
             className: 'chart-container',
-            style: { width: '100%', height: '500px', position: 'relative' }
+            style: { width: '100%', height: '80%', position: 'relative' }
         });
 
         container.appendChild(this.chartContainer);
@@ -240,7 +240,7 @@ class SpectrogrammChart extends Component {
         if (this.spectrogramm.f1 !== undefined && this.spectrogramm.f2 !== undefined) {
             const f1 = this.spectrogramm.f1 / 1e6;
             const f2 = this.spectrogramm.f2 / 1e6;
-            info.push(`📡 Диапазон: ${f1.toFixed(2)} - ${f2.toFixed(2)} МГц`);
+            info.push(`Диапазон: ${f1.toFixed(2)} - ${f2.toFixed(2)} МГц`);
         }
 
         // Информация о точках
@@ -254,16 +254,16 @@ class SpectrogrammChart extends Component {
         }
 
         if (points && points.length > 0) {
-            info.push(`📊 Точек: ${points.length}`);
+            info.push(`Точек: ${points.length}`);
             const min = Math.min(...points);
             const max = Math.max(...points);
             const avg = points.reduce((a, b) => a + b, 0) / points.length;
-            info.push(`📈 Уровень: min=${min.toFixed(2)} dBm, max=${max.toFixed(2)} dBm, avg=${avg.toFixed(2)} dBm`);
+            info.push(` Уровень: min=${min.toFixed(2)} dBm, max=${max.toFixed(2)} dBm, avg=${avg.toFixed(2)} dBm`);
         }
 
         // Информация о времени
         if (this.spectrogramm.timestamp) {
-            info.push(`🕐 ${new Date(this.spectrogramm.timestamp).toLocaleString()}`);
+            info.push(`${new Date(this.spectrogramm.timestamp).toLocaleString()}`);
         }
 
         this.infoDiv.innerHTML = info.join(' • ');
@@ -324,23 +324,23 @@ class SpectrogrammChart extends Component {
 
         // Показываем индикатор загрузки
         if (isLoading && this.infoDiv) {
-            this.infoDiv.innerHTML = '⏳ Загрузка данных с сервера...';
+            this.infoDiv.innerHTML = ' Загрузка данных с сервера...';
             // Показываем плейсхолдер с загрузкой
             if (!this.hasValidData) {
                 this.showPlaceholder();
                 if (this.chartContainer && this.chartContainer.firstChild) {
-                    this.chartContainer.firstChild.textContent = '⏳ Загрузка данных с сервера...';
+                    this.chartContainer.firstChild.textContent = 'Загрузка данных с сервера...';
                 }
             }
         }
 
         // Показываем ошибку
         if (error && this.infoDiv) {
-            this.infoDiv.innerHTML = `❌ Ошибка: ${error}`;
+            this.infoDiv.innerHTML = ` Ошибка: ${error}`;
             if (!this.hasValidData) {
                 this.showPlaceholder();
                 if (this.chartContainer && this.chartContainer.firstChild) {
-                    this.chartContainer.firstChild.textContent = `❌ Ошибка: ${error}`;
+                    this.chartContainer.firstChild.textContent = ` Ошибка: ${error}`;
                 }
             }
         }

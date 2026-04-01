@@ -58,3 +58,120 @@
     margin: 0;
     cursor: pointer;
 }
+
+/* ========== АДАПТИВНОСТЬ ========== */
+
+/* Планшеты */
+@media (max-width: 1024px) {
+    .input-wrapper {
+        margin-bottom: 14px;
+    }
+
+    .input-label {
+        font-size: 12px;
+        margin-bottom: 5px;
+    }
+
+    .input {
+        padding: 7px 11px;
+        font-size: 13px;
+    }
+
+    .monitoring-inputs {
+        padding: 14px;
+        margin-bottom: 16px;
+    }
+}
+
+@media (max-width: 768px) {
+    .input-wrapper {
+        margin-bottom: 12px;
+    }
+
+    .input-label {
+        font-size: 12px;
+    }
+
+    .input {
+        padding: 6px 10px;
+        font-size: 13px;
+    }
+
+    .monitoring-inputs {
+        padding: 12px;
+        margin-bottom: 14px;
+        border-radius: 6px;
+    }
+
+    .checkbox-wrapper,
+    .radio-wrapper {
+        gap: 6px;
+        margin-bottom: 6px;
+    }
+
+    .checkbox-wrapper label,
+    .radio-wrapper label {
+        font-size: 13px;
+    }
+}
+
+/* Мобильные */
+@media (max-width: 480px) {
+    .input-wrapper {
+        margin-bottom: 10px;
+    }
+
+    .input-label {
+        font-size: 11px;
+        margin-bottom: 4px;
+    }
+
+    .input {
+        padding: 5px 8px;
+        font-size: 12px;
+        border-radius: 4px;
+    }
+
+    .monitoring-inputs {
+        padding: 10px;
+        margin-bottom: 12px;
+    }
+
+    .checkbox-wrapper,
+    .radio-wrapper {
+        gap: 5px;
+        margin-bottom: 5px;
+    }
+
+    .checkbox-wrapper label,
+    .radio-wrapper label {
+        font-size: 12px;
+    }
+
+    .checkbox-wrapper input,
+    .radio-wrapper input {
+        width: 16px;
+        height: 16px;
+    }
+}
+
+/* Очень маленькие */
+@media (max-width: 320px) {
+    .input-label {
+        font-size: 10px;
+    }
+
+    .input {
+        padding: 4px 6px;
+        font-size: 11px;
+    }
+
+    .monitoring-inputs {
+        padding: 8px;
+    }
+
+    .checkbox-wrapper label,
+    .radio-wrapper label {
+        font-size: 11px;
+    }
+}

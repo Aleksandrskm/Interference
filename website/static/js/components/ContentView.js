@@ -25,7 +25,7 @@ class ContentView extends Component {
 
         const img = this.createElement('img', {
             className: 'clear-map-icon',
-            src: 'assets/clearMap.svg',
+            src: './../img/clear_map.svg',
             alt: 'Очистить карту'
         });
 

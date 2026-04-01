@@ -8,12 +8,15 @@
     background-color: var(--bg-tertiary);
     border-radius: 12px;
     border: 1px solid var(--border-light);
+    flex-shrink: 0;
 }
 
 .date-input-wrapper {
     display: flex;
     flex-direction: column;
     gap: 6px;
+    flex: 1;
+    min-width: 150px;
 }
 
 .date-input-wrapper .input-label {
@@ -28,6 +31,7 @@
     align-items: center;
     margin-bottom: 16px;
     flex-wrap: wrap;
+    overflow: auto;
 }
 
 .clear-map-btn {
@@ -61,4 +65,104 @@
 .clear-map-label {
     font-size: 11px;
     color: var(--text-light);
+}
+
+/* ========== АДАПТИВНОСТЬ ========== */
+
+/* Планшеты (768px - 1024px) */
+@media (max-width: 1024px) and (min-width: 769px) {
+    .date-time-panel {
+        padding: 16px;
+        gap: 12px;
+    }
+
+    .date-input-wrapper {
+        min-width: 130px;
+    }
+}
+
+/* Мобильные устройства (до 768px) */
+@media (max-width: 768px) {
+    .date-time-panel {
+        padding: 12px;
+        gap: 12px;
+        margin-bottom: 16px;
+        border-radius: 8px;
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+
+    .date-input-wrapper {
+        min-width: calc(50% - 12px);
+        flex: 1 1 auto;
+    }
+
+    .date-time-wrapper {
+        width: 100%;
+        gap: 12px;
+        margin-bottom: 0;
+        order: 1;
+    }
+
+    .clear-map-container {
+        order: 2;
+        margin-top: 8px;
+    }
+}
+
+/* Маленькие мобильные (до 480px) */
+@media (max-width: 480px) {
+    .date-time-panel {
+        padding: 12px;
+        gap: 10px;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .date-input-wrapper {
+        min-width: auto;
+        width: 100%;
+    }
+
+    .date-input-wrapper .input-label {
+        font-size: 11px;
+    }
+
+    .date-time-wrapper {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        margin-bottom: 0;
+    }
+
+    .clear-map-container {
+        flex-direction: row;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 4px;
+    }
+
+    .clear-map-btn {
+        padding: 6px 10px;
+    }
+
+    .clear-map-icon {
+        width: 18px;
+        height: 18px;
+    }
+}
+
+/* Очень маленькие (до 320px) */
+@media (max-width: 320px) {
+    .date-time-panel {
+        padding: 10px;
+    }
+
+    .date-input-wrapper .input-label {
+        font-size: 10px;
+    }
+
+    .clear-map-label {
+        font-size: 9px;
+    }
 }

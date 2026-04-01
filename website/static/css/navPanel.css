@@ -46,12 +46,83 @@
     transform: translateX(0);
 }
 
-/* Иконки навигации */
 .nav-icon {
     width: 20px;
     height: 20px;
+    flex-shrink: 0;
 }
 
 .nav-link-selected .nav-icon {
     filter: invert(1);
+}
+
+/* ========== АДАПТИВНОСТЬ ========== */
+
+@media (max-width: 1024px) {
+    .nav-link {
+        padding: 10px 14px;
+        gap: 10px;
+    }
+
+    .nav-icon {
+        width: 18px;
+        height: 18px;
+    }
+}
+
+/* Мобильные устройства */
+@media (max-width: 768px) {
+    .nav-panel {
+        width: 100%;
+        height: auto;
+        overflow-x: auto;
+        overflow-y: hidden;
+        border-radius: 8px;
+        flex-shrink: 0;
+    }
+
+    .nav-list {
+        display: flex;
+        flex-direction: row;
+        padding: 8px;
+        gap: 8px;
+        white-space: nowrap;
+    }
+
+    .nav-item {
+        margin: 0;
+    }
+
+    .nav-link {
+        padding: 8px 12px;
+        gap: 8px;
+    }
+
+    .nav-link:hover {
+        transform: translateX(0);
+        transform: translateY(-2px);
+    }
+
+    .nav-icon {
+        width: 16px;
+        height: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .nav-list {
+        padding: 6px;
+        gap: 6px;
+    }
+
+    .nav-link {
+        padding: 6px 10px;
+        font-size: 12px;
+        gap: 6px;
+    }
+
+    .nav-icon {
+        width: 14px;
+        height: 14px;
+    }
 }

@@ -1,5 +1,5 @@
 .header {
-    background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);;
     color: var(--text-white);
     padding: 0 2rem;
     height: var(--header-height);
@@ -9,6 +9,7 @@
     box-shadow: var(--shadow-md);
     position: relative;
     z-index: var(--z-sticky);
+    flex-shrink: 0;
 }
 
 .header-home {
@@ -70,4 +71,40 @@
     padding: 6px 12px;
     border-radius: 20px;
     font-weight: 500;
+    white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+    .header {
+        padding: 0 1rem;
+    }
+
+    .header-title {
+        font-size: 1rem;
+    }
+
+    .home-icon {
+        width: 28px;
+        height: 28px;
+    }
+
+    .timer {
+        font-size: 0.75rem;
+        padding: 4px 8px;
+    }
+}
+
+@media (max-width: 480px) {
+    .header {
+        padding: 0 0.75rem;
+    }
+
+    .header-title {
+        font-size: 0.85rem;
+    }
+
+    .home-icon {
+        width: 24px;
+        height: 24px;
+    }
 }

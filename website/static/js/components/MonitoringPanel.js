@@ -365,7 +365,9 @@ class MonitoringPanel extends Component {
                 padding: '20px',
                 backgroundColor: '#fff',
                 borderRadius: '8px',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                overflow: 'auto',
+                height: '90%'
             }});
 
         const dateTimePanel = new DateTimeRangePanel();
