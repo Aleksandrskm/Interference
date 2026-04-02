@@ -15,7 +15,7 @@ class MapComponent extends Component {
             className: 'map-container',
             style: {
                 width: '100%',
-                height: '500px',
+                height: '80%',
                 backgroundColor: '#e9ecef',
                 position: 'relative',
                 display: 'block'

@@ -60,4 +60,8 @@ body {
     min-height: calc(100vh - 80px);
     padding: 20px;
     gap: 20px;
+
+}
+.content-view{
+    width: 100%;
 }

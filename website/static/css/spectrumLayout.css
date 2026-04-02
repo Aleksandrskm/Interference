@@ -1,3 +1,5 @@
+/* spectrumLayout.css - Исправленная версия */
+
 .spectrum-layout {
     flex: 1;
     display: flex;
@@ -10,6 +12,7 @@
     flex-direction: row; /* Десктоп: горизонтально */
 }
 
+/* Убираем фиксированную высоту и позволяем элементу растягиваться по содержимому */
 .spectrum-setting {
     width: 430px;
     padding: 24px;
@@ -17,7 +20,7 @@
     border-right: 1px solid var(--border-light);
     overflow-y: auto;
     flex-shrink: 0;
-    height: 84%;
+    /* height: 84%; */ /* УДАЛЕНО */
 }
 
 .spectrum-setting h3 {
@@ -90,17 +93,17 @@
     flex-direction: column;
     padding: 20px;
     min-width: 0;
-    min-height: 0; /* Важно для корректной работы flex-контейнера */
-    overflow: hidden; /* Скрываем overflow у контейнера */
+    min-height: 0;
+    overflow: hidden;
 }
 
+/* Добавляем flex: 1, чтобы контейнер графика занимал все доступное место */
 .chart-container {
-    /*flex: 1; !* Занимает все доступное пространство *!*/
-    min-height: 0; /* Позволяет сжиматься */
+    flex: 1;
+    min-height: 0;
     position: relative;
     background-color: var(--bg-secondary);
     border-radius: 8px;
-    /* Добавляем рамку для визуального разделения */
     border: 1px solid var(--border-light);
 }
 
@@ -112,7 +115,7 @@
 }
 
 .spectrogram-info {
-    flex-shrink: 0; /* Блок не сжимается */
+    flex-shrink: 0;
     margin-top: 16px;
     padding: 12px;
     background-color: var(--bg-tertiary);
@@ -169,10 +172,13 @@
 
     .spectrogramm-chart {
         padding: 16px;
-        min-height: 450px; /* Фиксируем минимальную высоту на мобильных */
-        flex: none; /* Отключаем flex растягивание */
+        /* Убираем фиксированную высоту */
+        min-height: auto;
+        flex: 1;
+        min-height: 450px; /* Минимальная высота для читаемости графика */
     }
 
+    /* Контейнер графика занимает все пространство */
     .chart-container {
         min-height: 300px;
         flex: 1;
@@ -243,5 +249,10 @@
         font-size: 10px;
         padding: 8px;
         margin-top: 12px;
+    }
+}
+@media (min-height: 500px) and (max-height: 710px) {
+    .spectrum-setting{
+        height: 85%;
     }
 }

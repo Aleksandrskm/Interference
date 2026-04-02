@@ -1,3 +1,5 @@
+/* monitoringPanel.css - Исправленная версия */
+
 .monitoring-panel {
     flex: 1;
     background-color: var(--bg-secondary);
@@ -68,8 +70,10 @@
     .monitoring-panel {
         padding: 12px;
         border-radius: 8px;
-        min-height: 300px;
-        max-height: 400px;
+        /* Убираем фиксированную высоту и ограничения */
+        min-height: auto;
+        max-height: none;
+        width: 100%;
     }
 
     .monitoring-panel .button {
@@ -98,7 +102,6 @@
 @media (max-width: 480px) {
     .monitoring-panel {
         padding: 10px;
-        max-height: 350px;
     }
 
     .monitoring-panel .button {
@@ -122,7 +125,6 @@
 @media (max-width: 320px) {
     .monitoring-panel {
         padding: 8px;
-        max-height: 320px;
     }
 
     .task-item {
