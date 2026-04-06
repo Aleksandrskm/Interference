@@ -60,6 +60,7 @@ class Router {
                 this.currentPath = path;
             } catch (error) {
                 console.error('Error rendering route:', error);
+                console.log('route',route)
                 this.container.innerHTML = `<div class="error">Ошибка загрузки страницы: ${error.message}</div>`;
             }
         }

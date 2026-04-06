@@ -25,6 +25,12 @@ const routes = {
         console.log('Loading SpectrogrammPage');
         const { default: SpectrogrammPage } = await import('./pages/SpectrogrammPage.js');
         return SpectrogrammPage;
+    },
+    // ИСПРАВЛЕННЫЙ маршрут для сессий
+    '/sessions': async () => {
+        console.log('Loading SessionsPages');
+        const { default: SessionsPages } = await import('./pages/SessionsPages.js');
+        return SessionsPages;
     }
 };
 
