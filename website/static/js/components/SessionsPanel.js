@@ -393,9 +393,9 @@ class SessionsPanel extends Component {
                 style: {
                     padding: '10px',
                     margin: '6px 0',
-                    border: isSelected ? '2px solid #4caf50' : '1px solid #e0e0e0',
+                    border: isSelected ? '2px solid #2196f3' : '1px solid #e0e0e0',
                     borderRadius: '6px',
-                    backgroundColor: isSelected ? '#e8f5e9' : '#fff',
+                    backgroundColor: isSelected ? '#e3f2fd' : '#fff',
                     cursor: 'pointer',
                     transition: 'all 0.2s'
                 },
@@ -404,7 +404,7 @@ class SessionsPanel extends Component {
 
             spectrumDiv.innerHTML = `
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                    <div style="font-weight: bold; color: #388e3c;">ID спектрограммы: ${spectrum.id}</div>
+                    <div style="font-weight: bold; color: #2196f3;">ID спектрограммы: ${spectrum.id}</div>
                     <div style="font-size: 11px; color: #999;"> Дата: ${this.formatDateTime(spectrum.dt)}</div>
                 </div>
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; font-size: 11px;">
@@ -607,7 +607,7 @@ class SessionsPanel extends Component {
                 borderRadius: '8px',
                 padding: '10px',
                 backgroundColor: '#fafafa',
-                minHeight: '33vh',
+                minHeight: '42vh',
             }
         });
         panel1.appendChild(this.createElement('h3', {
@@ -630,7 +630,7 @@ class SessionsPanel extends Component {
                 borderRadius: '8px',
                 padding: '10px',
                 backgroundColor: '#fafafa',
-                minHeight: '33vh',
+                minHeight: '34vh',
             }
         });
         panel2.appendChild(this.createElement('h3', {
@@ -653,7 +653,7 @@ class SessionsPanel extends Component {
                 borderRadius: '8px',
                 padding: '10px',
                 backgroundColor: '#fafafa',
-                minHeight: '33vh',
+                minHeight: '50vh',
             }
         });
         panel3.appendChild(this.createElement('h3', {
