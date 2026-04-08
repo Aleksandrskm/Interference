@@ -2,10 +2,12 @@
 import { Component } from '../core/component.js';
 import { store } from '../core/store.js';
 
+// Обновить MENU_ITEMS:
 const MENU_ITEMS = [
     { id: 'currentInterference', label: 'Текущая помеховая обстановка', to: '/' },
     { id: 'monitoringInterference', label: 'Мониторинг помех', to: '/monitoring' },
-    { id: 'spectrogram', label: 'Спектрограмма', to: '/spectrogram' }
+    { id: 'spectrogram', label: 'Спектрограмма', to: '/spectrogram' },
+    { id: 'sessions', label: 'Решенные задачи', to: '/sessions' }  // Новый пункт
 ];
 
 class NavPanel extends Component {

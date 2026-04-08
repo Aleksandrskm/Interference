@@ -3,6 +3,7 @@ export class Component {
         this.element = null;
         this.unsubscribe = null;
         this.children = []; // Храним дочерние компоненты
+        this.isMounted = false; // Добавляем флаг монтирования
     }
 
     render() {
@@ -11,16 +12,29 @@ export class Component {
 
     mount() {
         console.log(`Mounting ${this.constructor.name}`);
+        this.isMounted = true;
 
-        if (this.subscribeToStore && window.app?.store) {
-            this.unsubscribe = window.app.store.subscribe((state) => {
-                this.onStoreUpdate(state);
-            });
+        // Отложенная подписка на store
+        if (this.subscribeToStore) {
+            // Ждем когда window.app будет доступен
+            const subscribeToStore = () => {
+                if (window.app?.store) {
+                    this.unsubscribe = window.app.store.subscribe((state) => {
+                        if (this.isMounted) {
+                            this.onStoreUpdate(state);
+                        }
+                    });
+                } else {
+                    // Если store еще не готов, пробуем через 100ms
+                    setTimeout(subscribeToStore, 100);
+                }
+            };
+            subscribeToStore();
         }
 
         // Монтируем всех дочерних компонентов
         this.children.forEach(child => {
-            if (child && child.mount) {
+            if (child && child.mount && !child.isMounted) {
                 child.mount();
             }
         });
@@ -32,6 +46,7 @@ export class Component {
 
     unmount() {
         console.log(`Unmounting ${this.constructor.name}`);
+        this.isMounted = false;
 
         // Размонтируем всех дочерних компонентов
         this.children.forEach(child => {
@@ -42,6 +57,7 @@ export class Component {
 
         if (this.unsubscribe) {
             this.unsubscribe();
+            this.unsubscribe = null;
         }
     }
 
@@ -61,23 +77,33 @@ export class Component {
             } else if (key === 'style' && typeof value === 'object') {
                 Object.assign(element.style, value);
             } else if (key.startsWith('on') && typeof value === 'function') {
-                element.addEventListener(key.slice(2).toLowerCase(), value);
+                const eventName = key.slice(2).toLowerCase();
+                element.addEventListener(eventName, value);
+            } else if (key === 'innerHTML') {
+                element.innerHTML = value;
             } else {
                 element.setAttribute(key, value);
             }
         });
 
-        children.forEach(child => {
-            if (typeof child === 'string') {
-                element.appendChild(document.createTextNode(child));
-            } else if (child instanceof Node) {
-                element.appendChild(child);
-            } else if (child && child.element) {
-                // Если это компонент, добавляем его элемент и регистрируем как дочерний
-                element.appendChild(child.element);
-                this.addChild(child);
-            }
-        });
+        // Обрабатываем children, которые могут быть в attributes
+        const allChildren = [...children];
+
+        // Если есть children в attributes.innerHTML, не добавляем другие children
+        if (attributes.innerHTML) {
+            // Уже установлено через innerHTML
+        } else {
+            allChildren.forEach(child => {
+                if (typeof child === 'string') {
+                    element.appendChild(document.createTextNode(child));
+                } else if (child instanceof Node) {
+                    element.appendChild(child);
+                } else if (child && child.element) {
+                    element.appendChild(child.element);
+                    this.addChild(child);
+                }
+            });
+        }
 
         return element;
     }
@@ -95,5 +121,14 @@ export class Component {
             }
         });
         return fragment;
+    }
+
+    // Вспомогательный метод для обновления компонента
+    rerender() {
+        if (this.element && this.element.parentNode) {
+            const newElement = this.render();
+            this.element.parentNode.replaceChild(newElement, this.element);
+            this.element = newElement;
+        }
     }
 }

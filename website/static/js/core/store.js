@@ -38,7 +38,25 @@ class Store {
                 averages: 2,
                 gain: 5
             },
-            currentPage: '/' // Добавляем текущую страницу
+            // НОВЫЕ СОСТОЯНИЯ ДЛЯ СТРАНИЦЫ СЕССИЙ
+            sessions: {
+                data: null,
+                isLoading: false,
+                error: null,
+                selectedSession: null
+            },
+            spectrumsList: {
+                data: null,
+                isLoading: false,
+                error: null,
+                selectedSpectrumId: null
+            },
+            currentSpectrum: {
+                data: null,
+                isLoading: false,
+                error: null
+            },
+            currentPage: '/'
         };
 
         this.listeners = [];
@@ -119,6 +137,27 @@ class Store {
                         isLoading: false,
                         error: null,
                         lastUpdate: null
+                    }
+                });
+                break;
+            case '/sessions':
+                this.setState({
+                    sessions: {
+                        data: null,
+                        isLoading: false,
+                        error: null,
+                        selectedSession: null
+                    },
+                    spectrumsList: {
+                        data: null,
+                        isLoading: false,
+                        error: null,
+                        selectedSpectrumId: null
+                    },
+                    currentSpectrum: {
+                        data: null,
+                        isLoading: false,
+                        error: null
                     }
                 });
                 break;

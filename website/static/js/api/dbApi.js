@@ -312,6 +312,58 @@ const dbApi = {
             console.error('Error in postSpectrum:', error);
             throw error;
         }
+    },
+    // Добавить после метода postSpectrum, но перед export default dbApi
+
+    async getSessions(body) {
+        try {
+            const response = await fetch(`${configApi.baseUrl}${DB_ENDPOINTS.GET_SESSIONS}`, {
+                method: 'POST',
+                headers: configApi.headers,
+                body: JSON.stringify(body)
+            });
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            return response.json();
+        } catch (error) {
+            console.error('Error in getSessions:', error);
+            throw error;
+        }
+    },
+
+    async getSpectrumsByTaskId(body) {
+        try {
+            const response = await fetch(`${configApi.baseUrl}${DB_ENDPOINTS.GET_SPECTRUMS}`, {
+                method: 'POST',
+                headers: configApi.headers,
+                body: JSON.stringify(body)
+            });
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            return response.json();
+        } catch (error) {
+            console.error('Error in getSpectrumsByTaskId:', error);
+            throw error;
+        }
+    },
+
+    async getSpectrumById(body) {
+        try {
+            const response = await fetch(`${configApi.baseUrl}${DB_ENDPOINTS.GET_SPECTRUM_BY_ID}`, {
+                method: 'POST',
+                headers: configApi.headers,
+                body: JSON.stringify(body)
+            });
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            return response.json();
+        } catch (error) {
+            console.error('Error in getSpectrumById:', error);
+            throw error;
+        }
     }
 };
 
