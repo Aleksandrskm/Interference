@@ -11,7 +11,9 @@ class ContentView extends Component {
 
     render() {
         const section = this.createElement('section', { className: 'content-view' });
-
+        const h2= document.createElement('h2');
+        h2.className='h2-hearder'
+        h2.innerText='Текущая помеховая обстановка';
         const dateTimePanel = new DateTimeRangePanel();
 
         // Создаем экземпляр MapComponent
@@ -41,7 +43,7 @@ class ContentView extends Component {
                 console.log('Map cleared');
             }
         });
-
+        section.appendChild(h2);
         wrapper.appendChild(clearBtn);
 
         section.appendChild(wrapper);

@@ -2,8 +2,8 @@ export class Component {
     constructor() {
         this.element = null;
         this.unsubscribe = null;
-        this.children = []; // Храним дочерние компоненты
-        this.isMounted = false; // Добавляем флаг монтирования
+        this.children = [];
+        this.isMounted = false;
     }
 
     render() {
@@ -16,7 +16,6 @@ export class Component {
 
         // Отложенная подписка на store
         if (this.subscribeToStore) {
-            // Ждем когда window.app будет доступен
             const subscribeToStore = () => {
                 if (window.app?.store) {
                     this.unsubscribe = window.app.store.subscribe((state) => {
@@ -25,7 +24,6 @@ export class Component {
                         }
                     });
                 } else {
-                    // Если store еще не готов, пробуем через 100ms
                     setTimeout(subscribeToStore, 100);
                 }
             };
@@ -59,6 +57,9 @@ export class Component {
             this.unsubscribe();
             this.unsubscribe = null;
         }
+
+        // Очищаем ссылку на элемент
+        this.element = null;
     }
 
     addChild(child) {
@@ -86,13 +87,9 @@ export class Component {
             }
         });
 
-        // Обрабатываем children, которые могут быть в attributes
         const allChildren = [...children];
 
-        // Если есть children в attributes.innerHTML, не добавляем другие children
-        if (attributes.innerHTML) {
-            // Уже установлено через innerHTML
-        } else {
+        if (!attributes.innerHTML) {
             allChildren.forEach(child => {
                 if (typeof child === 'string') {
                     element.appendChild(document.createTextNode(child));
@@ -123,12 +120,18 @@ export class Component {
         return fragment;
     }
 
-    // Вспомогательный метод для обновления компонента
+    // ИСПРАВЛЕННЫЙ метод rerender с проверкой
     rerender() {
-        if (this.element && this.element.parentNode) {
-            const newElement = this.render();
-            this.element.parentNode.replaceChild(newElement, this.element);
-            this.element = newElement;
+        if (this.element && this.element.parentNode && this.element.parentNode.isConnected) {
+            try {
+                const newElement = this.render();
+                this.element.parentNode.replaceChild(newElement, this.element);
+                this.element = newElement;
+            } catch (error) {
+                console.warn(`Rerender failed for ${this.constructor.name}:`, error);
+            }
+        } else {
+            console.warn(`Cannot rerender ${this.constructor.name}: element not in DOM`);
         }
     }
 }

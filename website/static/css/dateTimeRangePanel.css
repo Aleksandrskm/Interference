@@ -1,11 +1,11 @@
 .date-time-panel {
     display: flex;
     gap: 16px;
-    align-items: flex-end;
+    /*align-items: flex-end;*/
     flex-wrap: wrap;
     margin-bottom: 20px;
     padding: 20px;
-    background-color: var(--bg-tertiary);
+    /*background-color: #2980b9;*/
     border-radius: 12px;
     border: 1px solid var(--border-light);
     flex-shrink: 0;
@@ -13,16 +13,42 @@
 
 .date-input-wrapper {
     display: flex;
-    flex-direction: column;
-    gap: 6px;
-    flex: 1;
-    min-width: 150px;
+    min-width: 180px;
+    align-items: center;
+    height: 42px; /* ДОБАВЛЕНО: фиксированная высота wrapper'а */
 }
 
 .date-input-wrapper .input-label {
-    font-size: 12px;
+    font-size: 0.9rem;
     color: var(--text-secondary);
-    font-weight: 500;
+    font-weight: 600;
+    max-width: 200px;
+    margin-right: 8px;
+    align-self: center;
+    line-height: 1.2;
+    white-space: nowrap; /* ДОБАВЛЕНО: запрещаем перенос текста */
+}
+
+/* ДОБАВЛЕНО: стили для инпутов даты и времени */
+.date-time-panel input[type="date"],
+.date-time-panel input[type="time"] {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    background-color: white;
+    cursor: pointer;
+    height: 42px; /* ДОБАВЛЕНО: фиксированная высота */
+    box-sizing: border-box;
+}
+
+.date-time-panel input[type="date"]:focus,
+.date-time-panel input[type="time"]:focus {
+    outline: none;
+    border-color: var(--secondary-color);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
 }
 
 .date-time-wrapper {
@@ -30,15 +56,16 @@
     gap: 16px;
     align-items: center;
     margin-bottom: 16px;
-    flex-wrap: wrap;
     overflow: auto;
+
+
 }
 
 .clear-map-btn {
     background: none;
     border: none;
     cursor: pointer;
-    padding: 8px 12px;
+    padding: 10px 14px;
     border-radius: 6px;
     transition: all 0.2s;
     color: var(--text-secondary);
@@ -53,21 +80,26 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
 }
 
 .clear-map-icon {
-    width: 24px;
-    height: 24px;
+    width: 28px;
+    height: 28px;
     opacity: 0.7;
 }
 
 .clear-map-label {
-    font-size: 11px;
-    color: var(--text-light);
+    font-size: 0.8rem;
+    color: black;
+    font-weight: 500;
 }
 
 /* ========== АДАПТИВНОСТЬ ========== */
+.date-time-panel > .date-input-wrapper {
+    flex: 1 1 auto;
+    min-width: 0;
+}
 
 /* Планшеты (768px - 1024px) */
 @media (max-width: 1024px) and (min-width: 769px) {
@@ -77,14 +109,26 @@
     }
 
     .date-input-wrapper {
-        min-width: 130px;
+        min-width: 150px;
+        height: 40px; /* ДОБАВЛЕНО */
+    }
+
+    .date-input-wrapper .input-label {
+        font-size: 0.85rem;
+    }
+
+    .date-time-panel input[type="date"],
+    .date-time-panel input[type="time"] {
+        padding: 7px 10px;
+        font-size: 0.9rem;
+        height: 40px; /* ДОБАВЛЕНО */
     }
 }
 
 /* Мобильные устройства (до 768px) */
 @media (max-width: 768px) {
     .date-time-panel {
-        padding: 12px;
+        padding: 14px;
         gap: 12px;
         margin-bottom: 16px;
         border-radius: 8px;
@@ -95,6 +139,18 @@
     .date-input-wrapper {
         min-width: calc(50% - 12px);
         flex: 1 1 auto;
+        height: 38px; /* ДОБАВЛЕНО */
+    }
+
+    .date-input-wrapper .input-label {
+        font-size: 0.85rem;
+    }
+
+    .date-time-panel input[type="date"],
+    .date-time-panel input[type="time"] {
+        padding: 6px 10px;
+        font-size: 0.9rem;
+        height: 38px; /* ДОБАВЛЕНО */
     }
 
     .date-time-wrapper {
@@ -122,10 +178,21 @@
     .date-input-wrapper {
         min-width: auto;
         width: 100%;
+        height: auto; /* На мобильных убираем фиксированную высоту */
+        min-height: 36px;
     }
 
     .date-input-wrapper .input-label {
-        font-size: 11px;
+        font-size: 0.8rem;
+        margin-right: 6px;
+        white-space: normal; /* На мобильных разрешаем перенос */
+    }
+
+    .date-time-panel input[type="date"],
+    .date-time-panel input[type="time"] {
+        padding: 5px 8px;
+        font-size: 0.85rem;
+        height: 36px; /* ДОБАВЛЕНО */
     }
 
     .date-time-wrapper {
@@ -139,16 +206,20 @@
         flex-direction: row;
         justify-content: flex-end;
         gap: 8px;
-        margin-top: 4px;
+        margin-top: 6px;
     }
 
     .clear-map-btn {
-        padding: 6px 10px;
+        padding: 8px 12px;
     }
 
     .clear-map-icon {
-        width: 18px;
-        height: 18px;
+        width: 22px;
+        height: 22px;
+    }
+
+    .clear-map-label {
+        font-size: 0.75rem;
     }
 }
 
@@ -159,10 +230,17 @@
     }
 
     .date-input-wrapper .input-label {
-        font-size: 10px;
+        font-size: 0.75rem;
+    }
+
+    .date-time-panel input[type="date"],
+    .date-time-panel input[type="time"] {
+        padding: 4px 6px;
+        font-size: 0.8rem;
+        height: 34px; /* ДОБАВЛЕНО */
     }
 
     .clear-map-label {
-        font-size: 9px;
+        font-size: 0.7rem;
     }
 }
