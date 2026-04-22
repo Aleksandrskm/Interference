@@ -5,26 +5,29 @@ class Router {
         this.container = container;
         this.currentComponent = null;
         this.currentPath = window.location.pathname;
+        this.isNavigating = false; // Флаг для предотвращения одновременных переходов
     }
 
     async handleRoute() {
+        // Предотвращаем одновременные переходы
+        if (this.isNavigating) {
+            console.log('Navigation already in progress, skipping...');
+            return;
+        }
+
         const path = window.location.pathname;
         console.log('Handling route:', path);
 
-        // Находим соответствующий маршрут
-        let route = this.routes[path];
-
-        // Если маршрут не найден, пробуем найти динамический маршрут
-        if (!route) {
-            // Проверяем динамические маршруты (если есть)
-            for (const [routePath, routeHandler] of Object.entries(this.routes)) {
-                if (routePath.includes(':')) {
-                    // Здесь можно добавить логику для динамических маршрутов
-                }
-            }
+        // Если это тот же путь, не делаем ничего
+        if (path === this.currentPath && this.currentComponent) {
+            console.log('Same route, skipping');
+            return;
         }
 
-        // Если маршрут все еще не найден, используем 404 или домашнюю страницу
+        this.isNavigating = true;
+
+        let route = this.routes[path];
+
         if (!route) {
             console.warn('Route not found:', path);
             route = this.routes['/'];
@@ -36,6 +39,7 @@ class Router {
                 if (this.currentComponent && this.currentComponent.unmount) {
                     this.currentComponent.unmount();
                 }
+                this.currentComponent = null;
 
                 // Загружаем новый компонент
                 const Component = await route();
@@ -60,19 +64,30 @@ class Router {
                 this.currentPath = path;
             } catch (error) {
                 console.error('Error rendering route:', error);
-                console.log('route',route)
-                this.container.innerHTML = `<div class="error">Ошибка загрузки страницы: ${error.message}</div>`;
+                if (this.container) {
+                    this.container.innerHTML = `<div class="error">Ошибка загрузки страницы: ${error.message}</div>`;
+                }
+            } finally {
+                this.isNavigating = false;
             }
+        } else {
+            this.isNavigating = false;
         }
     }
 
     navigate(path) {
         console.log('Navigating to:', path);
+
+        // Не навигируем на тот же путь
+        if (path === this.currentPath) {
+            console.log('Already on this path, skipping navigation');
+            return;
+        }
+
         window.history.pushState({}, '', path);
         this.handleRoute();
     }
 
-    // Метод для принудительного обновления текущего маршрута
     refresh() {
         this.handleRoute();
     }

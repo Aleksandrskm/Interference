@@ -22,13 +22,13 @@ class DataContent extends Component {
                     { label: 'Количество подавленных каналов:', value: rssData.channels_suppressed },
                     { label: 'Количество каналов с ухудшением:', value: rssData.channels_w_deterioration }
                 ];
-
+                details.appendChild(summary);
                 fields.forEach(field => {
                     const fieldDiv = this.createElement('div', { className: 'field' }, `${field.label} ${field.value ?? 0}`);
                     details.appendChild(fieldDiv);
                 });
 
-                details.appendChild(summary);
+
                 section.appendChild(details);
             });
         }

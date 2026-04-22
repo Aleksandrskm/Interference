@@ -1,6 +1,6 @@
 .nav-panel {
     width: var(--nav-width);
-    background-color: var(--bg-secondary);
+    background-color: hsl(200, 129%, 92%);
     border-radius: 12px;
     box-shadow: var(--shadow-sm);
     overflow-y: auto;
@@ -19,18 +19,19 @@
 .nav-link {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 12px 16px;
+    gap: 14px;
+    padding: 14px 18px;
     color: var(--text-primary);
     text-decoration: none;
     transition: all 0.2s;
     border-radius: 8px;
-    font-weight: 500;
+    font-weight: 600;
+    font-size: 1.05rem;
 }
 
 .nav-link:hover {
     background-color: var(--bg-tertiary);
-    color: var(--secondary-color);
+    color: black;
     transform: translateX(4px);
 }
 
@@ -47,8 +48,8 @@
 }
 
 .nav-icon {
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     flex-shrink: 0;
 }
 
@@ -60,13 +61,14 @@
 
 @media (max-width: 1024px) {
     .nav-link {
-        padding: 10px 14px;
-        gap: 10px;
+        padding: 12px 16px;
+        gap: 12px;
+        font-size: 0.95rem;
     }
 
     .nav-icon {
-        width: 18px;
-        height: 18px;
+        width: 22px;
+        height: 22px;
     }
 }
 
@@ -84,8 +86,8 @@
     .nav-list {
         display: flex;
         flex-direction: row;
-        padding: 8px;
-        gap: 8px;
+        padding: 10px;
+        gap: 10px;
         white-space: nowrap;
     }
 
@@ -94,8 +96,9 @@
     }
 
     .nav-link {
-        padding: 8px 12px;
-        gap: 8px;
+        padding: 10px 14px;
+        gap: 10px;
+        font-size: 0.9rem;
     }
 
     .nav-link:hover {
@@ -104,25 +107,25 @@
     }
 
     .nav-icon {
-        width: 16px;
-        height: 16px;
+        width: 20px;
+        height: 20px;
     }
 }
 
 @media (max-width: 480px) {
     .nav-list {
-        padding: 6px;
-        gap: 6px;
+        padding: 8px;
+        gap: 8px;
     }
 
     .nav-link {
-        padding: 6px 10px;
-        font-size: 12px;
-        gap: 6px;
+        padding: 8px 12px;
+        font-size: 0.85rem;
+        gap: 8px;
     }
 
     .nav-icon {
-        width: 14px;
-        height: 14px;
+        width: 18px;
+        height: 18px;
     }
 }

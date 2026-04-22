@@ -1,4 +1,4 @@
-/* monitoringPanel.css - Исправленная версия */
+/* monitoringPanel.css - Исправленная версия с увеличенными шрифтами */
 
 .monitoring-panel {
     flex: 1;
@@ -28,8 +28,8 @@
 .task-item {
     background-color: var(--bg-tertiary);
     border-radius: 8px;
-    padding: 16px;
-    margin-bottom: 12px;
+    padding: 18px;
+    margin-bottom: 14px;
     border: 1px solid var(--border-light);
     transition: all 0.2s;
 }
@@ -40,16 +40,18 @@
 }
 
 .task-item .field {
-    font-weight: 600;
+    font-weight: 700;
+    font-size: 1rem;
     color: var(--primary-color);
-    margin-bottom: 4px;
+    margin-bottom: 6px;
 }
 
 .task-item .value {
     color: var(--text-secondary);
     font-family: var(--font-mono);
-    font-size: 13px;
+    font-size: 0.9rem;
     word-break: break-word;
+    line-height: 1.4;
 }
 
 /* ========== АДАПТИВНОСТЬ ========== */
@@ -61,27 +63,59 @@
     }
 
     .task-item {
-        padding: 14px;
+        padding: 16px;
+    }
+
+    .task-item .field {
+        font-size: 0.95rem;
+    }
+
+    .task-item .value {
+        font-size: 0.85rem;
     }
 }
 
 /* Мобильные устройства (до 768px) */
 @media (max-width: 768px) {
     .monitoring-panel {
-        padding: 12px;
+        padding: 14px;
         border-radius: 8px;
-        /* Убираем фиксированную высоту и ограничения */
         min-height: auto;
         max-height: none;
         width: 100%;
     }
 
     .monitoring-panel .button {
-        margin: 16px 0;
+        margin: 18px 0;
     }
 
     .monitoring-article {
-        margin-top: 16px;
+        margin-top: 18px;
+    }
+
+    .task-item {
+        padding: 14px;
+        margin-bottom: 12px;
+    }
+
+    .task-item .field {
+        font-size: 0.9rem;
+        margin-bottom: 5px;
+    }
+
+    .task-item .value {
+        font-size: 0.85rem;
+    }
+}
+
+/* Мобильные (до 480px) */
+@media (max-width: 480px) {
+    .monitoring-panel {
+        padding: 12px;
+    }
+
+    .monitoring-panel .button {
+        margin: 14px 0;
     }
 
     .task-item {
@@ -90,52 +124,29 @@
     }
 
     .task-item .field {
-        font-size: 13px;
+        font-size: 0.85rem;
     }
 
     .task-item .value {
-        font-size: 12px;
-    }
-}
-
-/* Мобильные (до 480px) */
-@media (max-width: 480px) {
-    .monitoring-panel {
-        padding: 10px;
-    }
-
-    .monitoring-panel .button {
-        margin: 12px 0;
-    }
-
-    .task-item {
-        padding: 10px;
-    }
-
-    .task-item .field {
-        font-size: 12px;
-    }
-
-    .task-item .value {
-        font-size: 11px;
+        font-size: 0.8rem;
     }
 }
 
 /* Очень маленькие (до 320px) */
 @media (max-width: 320px) {
     .monitoring-panel {
-        padding: 8px;
+        padding: 10px;
     }
 
     .task-item {
-        padding: 8px;
+        padding: 10px;
     }
 
     .task-item .field {
-        font-size: 11px;
+        font-size: 0.8rem;
     }
 
     .task-item .value {
-        font-size: 10px;
+        font-size: 0.75rem;
     }
 }

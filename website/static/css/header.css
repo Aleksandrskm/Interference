@@ -1,8 +1,8 @@
-/* header.css - Исправленная версия */
+/* header.css - Исправленная версия с увеличенными шрифтами */
 
 .header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: var(--text-white);
+    background: #999999;
+    color: var(--text-primary);
     padding: 0 2rem;
     height: var(--header-height);
     display: flex;
@@ -12,15 +12,14 @@
     position: relative;
     z-index: var(--z-sticky);
     flex-shrink: 0;
-    gap: 12px; /* Добавляем gap для отступов между элементами */
+    gap: 12px;
 }
 
 .header-home {
-
     align-items: center;
     gap: 1rem;
-    flex-shrink: 0; /* Запрещаем сжатие блока с иконкой и таймером */
-    display: none;
+    flex-shrink: 0;
+    display: flex;
 }
 
 .home-link {
@@ -28,7 +27,7 @@
     align-items: center;
     text-decoration: none;
     transition: transform 0.2s;
-    flex-shrink: 0; /* Запрещаем сжатие иконки дома */
+    flex-shrink: 0;
 }
 
 .home-link:hover {
@@ -36,34 +35,35 @@
 }
 
 .home-icon {
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
     filter: invert(1);
+    display: none;
 }
 
 .header-title {
-    font-size: 1.25rem;
-    font-weight: 600;
+    font-size: 1.8rem;
+    font-weight: 700;
     letter-spacing: 0.5px;
-    flex: 1; /* Заголовок занимает все доступное пространство */
-    text-align: center; /* Центрируем текст */
-    white-space: nowrap; /* Запрещаем перенос на десктопе */
+    flex: 1;
+    text-align: center;
+    white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis; /* Добавляем многоточие при переполнении */
-    margin: 0 12px; /* Добавляем отступы */
+    text-overflow: ellipsis;
+    margin: 0 12px;
 }
 
 .header-settings {
     background: rgba(255, 255, 255, 0.1);
     border: none;
     cursor: pointer;
-    padding: 8px;
+    padding: 10px;
     border-radius: 50%;
     transition: all 0.3s ease;
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-shrink: 0; /* Запрещаем сжатие кнопки настроек */
+    flex-shrink: 0;
 }
 
 .header-settings:hover {
@@ -72,20 +72,20 @@
 }
 
 .settings-icon {
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     filter: invert(1);
 }
 
 .timer {
     font-family: var(--font-mono);
-    font-size: 0.9rem;
+    font-size: 1.1rem;
     background: rgba(0, 0, 0, 0.3);
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-weight: 500;
+    padding: 8px 14px;
+    border-radius: 24px;
+    font-weight: 600;
     white-space: nowrap;
-    flex-shrink: 0; /* Запрещаем сжатие таймера */
+    flex-shrink: 0;
 }
 
 /* ========== АДАПТИВНОСТЬ ========== */
@@ -97,18 +97,18 @@
     }
 
     .header-title {
-        font-size: 1.1rem;
+        font-size: 1.4rem;
         margin: 0 8px;
     }
 
     .home-icon {
-        width: 28px;
-        height: 28px;
+        width: 32px;
+        height: 32px;
     }
 
     .timer {
-        font-size: 0.8rem;
-        padding: 5px 10px;
+        font-size: 0.95rem;
+        padding: 6px 12px;
     }
 }
 
@@ -124,34 +124,32 @@
     }
 
     .home-icon {
-        width: 24px;
-        height: 24px;
+        width: 28px;
+        height: 28px;
     }
 
-    /* На мобильных разрешаем перенос текста */
     .header-title {
-        font-size: 0.85rem;
-        white-space: normal; /* Разрешаем перенос на мобильных */
+        font-size: 1.1rem;
+        white-space: normal;
         text-align: center;
         line-height: 1.3;
         margin: 0 6px;
         flex: 1;
-        /* Убираем text-overflow, так как теперь переносим */
         overflow: visible;
     }
 
     .timer {
-        font-size: 0.7rem;
-        padding: 4px 8px;
+        font-size: 0.85rem;
+        padding: 5px 10px;
     }
 
     .settings-icon {
-        width: 18px;
-        height: 18px;
+        width: 22px;
+        height: 22px;
     }
 
     .header-settings {
-        padding: 6px;
+        padding: 8px;
     }
 }
 
@@ -160,7 +158,7 @@
     .header {
         padding: 0 10px;
         gap: 6px;
-        min-height: var(--header-height); /* Гарантируем минимальную высоту */
+        min-height: var(--header-height);
     }
 
     .header-home {
@@ -168,28 +166,28 @@
     }
 
     .home-icon {
-        width: 20px;
-        height: 20px;
+        width: 24px;
+        height: 24px;
     }
 
     .header-title {
-        font-size: 0.75rem;
+        font-size: 0.95rem;
         line-height: 1.2;
         margin: 0 4px;
     }
 
     .timer {
-        font-size: 0.65rem;
-        padding: 3px 6px;
+        font-size: 0.75rem;
+        padding: 4px 8px;
     }
 
     .settings-icon {
-        width: 16px;
-        height: 16px;
+        width: 20px;
+        height: 20px;
     }
 
     .header-settings {
-        padding: 5px;
+        padding: 6px;
     }
 }
 
@@ -198,7 +196,7 @@
     .header {
         padding: 0 8px;
         gap: 4px;
-        flex-wrap: wrap; /* Разрешаем перенос на очень маленьких экранах */
+        flex-wrap: wrap;
         height: auto;
         min-height: var(--header-height);
     }
@@ -209,8 +207,8 @@
 
     .header-title {
         order: 2;
-        width: 100%; /* Заголовок занимает всю ширину */
-        font-size: 0.7rem;
+        width: 100%;
+        font-size: 0.85rem;
         margin: 4px 0;
         padding: 0 4px;
     }
@@ -220,7 +218,7 @@
     }
 
     .timer {
-        font-size: 0.6rem;
-        padding: 2px 6px;
+        font-size: 0.7rem;
+        padding: 3px 8px;
     }
 }

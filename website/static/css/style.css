@@ -19,8 +19,8 @@
     --bg-sidebar: #34495e;
 
     /* Текстовые цвета */
-    --text-primary: #2c3e50;
-    --text-secondary: #7f8c8d;
+    --text-primary: black;
+    --text-secondary: black;
     --text-light: #95a5a6;
     --text-white: #ffffff;
 
@@ -66,7 +66,9 @@ body {
     height: 100vh;
     overflow: hidden;
 }
-
+.h2-hearder{
+    text-align: center;
+}
 #app {
     height: 100vh;
     overflow: hidden;
