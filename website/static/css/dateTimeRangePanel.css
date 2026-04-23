@@ -97,7 +97,7 @@
 
 /* ========== АДАПТИВНОСТЬ ========== */
 .date-time-panel > .date-input-wrapper {
-    flex: 1 1 auto;
+    /*flex: 1 1 auto;*/
     min-width: 0;
 }
 

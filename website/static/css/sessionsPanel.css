@@ -1,0 +1,435 @@
+/* sessionsPanel.css - Стили для панели результатов задач */
+
+.sessions-panel {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 100px);
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    overflow: hidden;
+    width: 100%;
+    position: relative;
+    margin-left: 10px;
+}
+
+.sessions-panel h2 {
+    margin: 0 0 15px 0;
+    font-size: 20px;
+    color: #333;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+/* Навигационные кнопки - фиксированные при скролле */
+.sessions-nav-buttons {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    background-color: #fff;
+    z-index: 100;
+    padding: 5px 0;
+}
+
+.nav-btn {
+    padding: 8px 16px;
+    background-color: #f0f0f0;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 15px;
+    transition: all 0.2s;
+    color: #333;
+}
+
+.nav-btn:hover {
+    background-color: #e0e0e0;
+    transform: translateY(-2px);
+}
+
+.nav-btn:active {
+    transform: translateY(0);
+}
+
+/* Кнопка загрузки */
+.load-sessions-btn {
+    padding: 10px 20px;
+    background-color: #2196f3;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-bottom: 20px;
+    flex-shrink: 0;
+    transition: all 0.2s;
+}
+
+.load-sessions-btn:hover {
+    background-color: #1976d2;
+    transform: translateY(-1px);
+}
+
+.load-sessions-btn:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Основной контент */
+.sessions-main-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    gap: 20px;
+    overflow: auto;
+    min-height: 0;
+}
+
+/* Панели */
+.sessions-panel-card {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: auto;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 12px;
+    background-color: #fafafa;
+    transition: all 0.2s;
+}
+
+.sessions-panel-card:first-child {
+    /*max-height: 40%;*/
+}
+
+.sessions-panel-card:nth-child(2) {
+    /*max-height: 30%;*/
+}
+
+.sessions-panel-card:last-child {
+    /*flex: 1;*/
+}
+
+.sessions-panel-card h3 {
+    margin: 0 0 10px 0;
+    font-size: 15px;
+    color: #555;
+    flex-shrink: 0;
+    padding-bottom: 5px;
+    border-bottom: 2px solid #2196f3;
+    display: inline-block;
+    align-self: flex-start;
+}
+
+/* Контейнеры для списков */
+.sessions-list-container,
+.spectrums-list-container,
+.spectrum-details-container {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 100px;
+}
+
+/* Таблицы */
+.sessions-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+.sessions-table th {
+    padding: 10px 8px;
+    border: 1px solid #ddd;
+    text-align: left;
+    background-color: #f5f5f5;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.sessions-table td {
+    padding: 8px;
+    border: 1px solid #ddd;
+}
+
+.sessions-table tr {
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.sessions-table tr:hover {
+    opacity: 0.85;
+}
+
+/* Цветовые классы для строк */
+.row-noises {
+    background-color: #ffebee; /* красный - есть помехи */
+}
+
+.row-clean {
+    background-color: #e8f5e9; /* зеленый - нет помех */
+}
+
+.row-selected {
+    background-color: #e3f2fd; /* синий - выбрано */
+}
+
+/* Детали спектрограммы */
+.spectrum-details {
+    padding: 15px;
+    background-color: #f5f5f5;
+    border-radius: 10px;
+}
+
+.spectrum-details h4 {
+    margin: 0 0 10px 0;
+    color: #333;
+    font-size: 14px;
+}
+
+.spectrum-details-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin-bottom: 10px;
+}
+
+.spectrum-details-table td {
+    padding: 8px;
+    border: 1px solid #ddd;
+}
+
+.spectrum-details-table td:first-child {
+    background-color: #f5f5f5;
+    font-weight: 600;
+    width: 180px;
+}
+
+/* Секция полезных сигналов и помех */
+.signals-section,
+.noises-section {
+    margin-top: 15px;
+}
+
+.signals-section h5,
+.noises-section h5 {
+    margin: 0 0 8px 0;
+    font-size: 13px;
+}
+
+.signals-section h5 {
+    color: #2e7d32;
+}
+
+.noises-section h5 {
+    color: #c62828;
+}
+
+.signals-table,
+.noises-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+.signals-table th,
+.noises-table th {
+    padding: 6px 4px;
+    border: 1px solid #ddd;
+    background-color: #f5f5f5;
+    font-weight: 600;
+}
+
+.signals-table td,
+.noises-table td {
+    padding: 4px;
+    border: 1px solid #ddd;
+}
+
+.signals-table tr {
+    background-color: #e8f5e9;
+}
+
+.noises-table tr {
+    background-color: #ffebee;
+}
+
+.scrollable-table {
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+/* Сообщения */
+.loading-message,
+.error-message,
+.empty-message {
+    padding: 20px;
+    text-align: center;
+}
+
+.loading-message {
+    color: #666;
+}
+
+.error-message {
+    color: #f44336;
+}
+
+.empty-message {
+    color: #999;
+}
+
+/* Адаптивность */
+@media (max-width: 1024px) {
+    .sessions-panel {
+        padding: 15px;
+    }
+
+    .sessions-panel h2 {
+        font-size: 18px;
+    }
+
+    .nav-btn {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 768px) {
+    .sessions-panel {
+        height: auto;
+        min-height: calc(100vh - 80px);
+        padding: 12px;
+    }
+
+    .sessions-panel h2 {
+        font-size: 16px;
+        margin-bottom: 10px;
+    }
+
+    .sessions-nav-buttons {
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .nav-btn {
+        padding: 6px 10px;
+        font-size: 11px;
+    }
+
+    .load-sessions-btn {
+        padding: 8px 16px;
+        font-size: 13px;
+        margin-bottom: 15px;
+    }
+
+    .sessions-main-content {
+        gap: 15px;
+    }
+
+    .sessions-panel-card {
+        padding: 10px;
+    }
+
+    .sessions-panel-card h3 {
+        font-size: 13px;
+    }
+
+    .sessions-table th,
+    .sessions-table td {
+        padding: 6px 4px;
+        font-size: 11px;
+    }
+
+    .spectrum-details {
+        padding: 12px;
+    }
+
+    .spectrum-details-table td {
+        padding: 6px;
+        font-size: 11px;
+    }
+
+    .spectrum-details-table td:first-child {
+        width: 120px;
+    }
+}
+
+@media (max-width: 480px) {
+    .sessions-panel {
+        padding: 10px;
+    }
+
+    .sessions-panel h2 {
+        font-size: 14px;
+    }
+
+    .nav-btn {
+        padding: 5px 8px;
+        font-size: 10px;
+    }
+
+    .load-sessions-btn {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+
+    .sessions-table th,
+    .sessions-table td {
+        padding: 4px 2px;
+        font-size: 10px;
+    }
+
+    .spectrum-details {
+        padding: 10px;
+    }
+
+    .spectrum-details-table td {
+        padding: 4px;
+        font-size: 10px;
+    }
+
+    .spectrum-details-table td:first-child {
+        width: 100px;
+    }
+}
+
+/* Для скролла внутри панелей */
+.sessions-list-container::-webkit-scrollbar,
+.spectrums-list-container::-webkit-scrollbar,
+.spectrum-details-container::-webkit-scrollbar,
+.scrollable-table::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.sessions-list-container::-webkit-scrollbar-track,
+.spectrums-list-container::-webkit-scrollbar-track,
+.spectrum-details-container::-webkit-scrollbar-track,
+.scrollable-table::-webkit-scrollbar-track {
+    background: #f0f0f0;
+    border-radius: 3px;
+}
+
+.sessions-list-container::-webkit-scrollbar-thumb,
+.spectrums-list-container::-webkit-scrollbar-thumb,
+.spectrum-details-container::-webkit-scrollbar-thumb,
+.scrollable-table::-webkit-scrollbar-thumb {
+    background: #bbb;
+    border-radius: 3px;
+}
+
+.sessions-list-container::-webkit-scrollbar-thumb:hover,
+.spectrums-list-container::-webkit-scrollbar-thumb:hover,
+.spectrum-details-container::-webkit-scrollbar-thumb:hover,
+.scrollable-table::-webkit-scrollbar-thumb:hover {
+    background: #999;
+}

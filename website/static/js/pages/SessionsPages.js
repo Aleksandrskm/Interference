@@ -38,13 +38,13 @@ class SessionsPages extends Component {
     mount() {
         console.log('SessionsPages mount called');
 
-        // ВАЖНО: сначала устанавливаем currentPage, потом сбрасываем данные
-        store.setState({ currentPage: '/sessions' });
+        // Устанавливаем текущую страницу
+        store.setState({ currentPage: '/' });
 
-        // Сбрасываем данные (теперь это работает, так как мы добавили case в store)
-        store.resetPageData('/sessions');
+        // Сбрасываем данные при монтировании страницы
+        store.resetPageData('/');
 
-        // Монтируем детей
+        // Монтируем всех детей
         super.mount();
     }
 

@@ -2,12 +2,14 @@
 import { Component } from '../core/component.js';
 import { store } from '../core/store.js';
 
-// Обновить MENU_ITEMS:
+// Обновленные MENU_ITEMS с измененным порядком
 const MENU_ITEMS = [
-    { id: 'currentInterference', label: 'Текущая помеховая обстановка', to: '/' },
-    { id: 'monitoringInterference', label: 'Мониторинг помех', to: '/monitoring' },
-    { id: 'spectrogram', label: 'Спектрограмма', to: '/spectrogram' },
-    { id: 'sessions', label: 'Решенные задачи', to: '/sessions' }  // Новый пункт
+    { id: 'sessions', label: 'Результаты задач', to: '/' },
+    { id: 'spectrogram', label: 'Получить спектрограмму', to: '/spectrogram' },
+    { id: 'currentInterference', label: 'Текущая помеховая обстановка', to: '/interference' },
+
+    { id: 'monitoringInterference', label: 'Постановка задач', to: '/monitoring' },
+
 ];
 
 class NavPanel extends Component {
@@ -20,7 +22,7 @@ class NavPanel extends Component {
     getCurrentId() {
         const path = window.location.pathname;
         const item = MENU_ITEMS.find(item => item.to === path);
-        return item ? item.id : 'currentInterference';
+        return item ? item.id : 'sessions';  // Изменено на 'sessions' как дефолтное
     }
 
     render() {
@@ -38,14 +40,11 @@ class NavPanel extends Component {
                 onclick: (e) => {
                     e.preventDefault();
                     console.log('Navigating to:', item.to);
-                    // Обновляем store
                     store.setState({ currentPage: item.to });
-                    // Используем роутер для навигации
                     if (window.app && window.app.router) {
                         window.app.router.navigate(item.to);
                     } else {
                         console.error('Router not found');
-                        // fallback
                         window.location.href = item.to;
                     }
                 }

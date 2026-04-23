@@ -111,6 +111,27 @@ class Store {
         switch(page) {
             case '/':
                 this.setState({
+                    sessions: {
+                        data: null,
+                        isLoading: false,
+                        error: null,
+                        selectedSession: null
+                    },
+                    spectrumsList: {
+                        data: null,
+                        isLoading: false,
+                        error: null,
+                        selectedSpectrumId: null
+                    },
+                    currentSpectrum: {
+                        data: null,
+                        isLoading: false,
+                        error: null
+                    }
+                });
+                break;
+            case '/interference':  // Обновленный путь
+                this.setState({
                     dashboard: {
                         data: null,
                         isLoading: false,
