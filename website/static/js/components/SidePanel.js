@@ -155,7 +155,7 @@ class SidePanel extends Component {
 
         this.contentContainer = this.createElement('div', { className: 'side-panel-content' });
 
-        section.appendChild(title);
+        // section.appendChild(title);
         section.appendChild(refreshBtn);
         section.appendChild(this.contentContainer);
 
