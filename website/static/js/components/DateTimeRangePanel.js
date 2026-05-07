@@ -49,7 +49,8 @@ class DateTimeRangePanel extends Component {
             type: type,
             className: 'input',
             value: value || '',
-            onchange: onChange
+            onchange: onChange,
+            step:1,
         });
 
         wrapper.appendChild(input);

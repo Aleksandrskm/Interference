@@ -1,12 +1,13 @@
-// Универсальный компонент для графиков
-class Chart {
+// components/SpectrumChart.js
+// Специальный компонент для отображения спектрограмм с прямоугольниками сигналов и помех
+
+export class SpectrumChart {
     constructor(container, config) {
         this.container = container;
         this.config = config;
         this.canvas = null;
         this.ctx = null;
         this.tooltip = null;
-        this.animationFrame = null;
         this.init();
     }
 
@@ -18,33 +19,29 @@ class Chart {
         this.container.appendChild(this.canvas);
 
         this.ctx = this.canvas.getContext('2d');
-
         this.createTooltip();
 
         this.resizeObserver = new ResizeObserver(() => this.resize());
         this.resizeObserver.observe(this.container);
 
         this.resize();
-
         this.bindEvents();
     }
 
     createTooltip() {
         this.tooltip = document.createElement('div');
-        this.tooltip.style.position = 'fixed'; // Изменено с absolute на fixed
+        this.tooltip.style.position = 'fixed';
         this.tooltip.style.backgroundColor = 'rgba(0, 0, 0, 0.85)';
         this.tooltip.style.color = 'white';
         this.tooltip.style.padding = '8px 12px';
         this.tooltip.style.borderRadius = '6px';
-        this.tooltip.style.fontSize = '14px';
+        this.tooltip.style.fontSize = '12px';
         this.tooltip.style.fontFamily = 'monospace';
         this.tooltip.style.pointerEvents = 'none';
         this.tooltip.style.zIndex = '10000';
         this.tooltip.style.display = 'none';
         this.tooltip.style.whiteSpace = 'nowrap';
-        this.tooltip.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
-        this.tooltip.style.border = '1px solid rgba(255,255,255,0.2)';
-        document.body.appendChild(this.tooltip); // Добавляем в body, а не в container
+        document.body.appendChild(this.tooltip);
     }
 
     bindEvents() {
@@ -54,9 +51,11 @@ class Chart {
 
     resize() {
         const rect = this.container.getBoundingClientRect();
-        this.canvas.width = rect.width;
-        this.canvas.height = rect.height;
-        this.draw();
+        if (rect.width > 0 && rect.height > 0) {
+            this.canvas.width = rect.width;
+            this.canvas.height = rect.height;
+            this.draw();
+        }
     }
 
     handleMouseMove(e) {
@@ -64,7 +63,6 @@ class Chart {
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
 
-        // Проверяем, что мышь вообще над canvas
         if (x < 0 || x > rect.width || y < 0 || y > rect.height) {
             this.hideTooltip();
             return;
@@ -79,94 +77,52 @@ class Chart {
     }
 
     getDataPointAt(x, y) {
-        if (!this.config.data.labels.length) return null;
+        const data = this.config.data;
+        if (!data || !data.length) return null;
 
-        const padding = this.getPadding();
+        const padding = { left: 60, right: 30, top: 30, bottom: 50 };
         const width = this.canvas.width;
         const chartWidth = width - padding.left - padding.right;
 
-        // Проверяем, что мышь находится в области графика по оси X
-        if (x < padding.left || x > padding.left + chartWidth) {
-            return null;
-        }
+        if (x < padding.left || x > padding.left + chartWidth) return null;
 
-        // Проверяем, что мышь находится в области графика по оси Y
         const chartHeight = this.canvas.height - padding.top - padding.bottom;
-        if (y < padding.top || y > padding.top + chartHeight) {
-            return null;
-        }
+        if (y < padding.top || y > padding.top + chartHeight) return null;
 
-        const step = chartWidth / (this.config.data.labels.length - 1);
+        const step = chartWidth / (data.length - 1);
         const mouseXInChart = x - padding.left;
-
-        // Находим ближайший индекс
         let dataIndex = Math.round(mouseXInChart / step);
+        dataIndex = Math.max(0, Math.min(dataIndex, data.length - 1));
 
-        // Ограничиваем допустимыми значениями
-        dataIndex = Math.max(0, Math.min(dataIndex, this.config.data.labels.length - 1));
+        const { f1MHz, f2MHz } = this.config;
+        const freq = f1MHz + (f2MHz - f1MHz) * (dataIndex / (data.length - 1));
 
-        const dataset = this.config.data.datasets[0];
         return {
-            label: this.config.data.labels[dataIndex],
-            value: dataset.data[dataIndex],
-            index: dataIndex,
-            x: padding.left + (step * dataIndex),
-            y: this.getYCoordinateForValue(dataset.data[dataIndex])
+            label: freq.toFixed(3),
+            value: data[dataIndex],
+            index: dataIndex
         };
     }
 
-    getYCoordinateForValue(value) {
-        const dataset = this.config.data.datasets[0];
-        const data = dataset.data;
-        const minValue = Math.min(...data);
-        const maxValue = Math.max(...data);
-        const valueRange = maxValue - minValue || 1;
-
-        const padding = this.getPadding();
-        const chartHeight = this.canvas.height - padding.top - padding.bottom;
-
-        return padding.top + chartHeight - ((value - minValue) / valueRange) * chartHeight;
-    }
-
     showTooltip(clientX, clientY, dataPoint) {
-        const labelFormatter = this.config.options?.plugins?.tooltip?.callbacks?.label;
-        const labelText = labelFormatter
-            ? labelFormatter({ raw: dataPoint.value })
-            : `Амплитуда: ${dataPoint.value.toFixed(2)} dBm`;
-
         this.tooltip.innerHTML = `
             <div style="font-weight: bold; margin-bottom: 4px;">${dataPoint.label} МГц</div>
-            <div style="color: #64b5f6;">${labelText}</div>
+            <div style="color: #64b5f6;">Амплитуда: ${dataPoint.value.toFixed(2)} дБ</div>
         `;
-
         this.tooltip.style.display = 'block';
 
-        // Получаем размеры подсказки
         const tooltipRect = this.tooltip.getBoundingClientRect();
-
-        // Рассчитываем позицию (смещение 15px от курсора)
         let left = clientX + 15;
         let top = clientY + 15;
 
-        // Проверяем, не выходит ли подсказка за правый край
         if (left + tooltipRect.width > window.innerWidth - 10) {
             left = clientX - tooltipRect.width - 15;
         }
-
-        // Проверяем, не выходит ли подсказка за нижний край
         if (top + tooltipRect.height > window.innerHeight - 10) {
             top = clientY - tooltipRect.height - 15;
         }
-
-        // Проверяем, не выходит ли за левый край
-        if (left < 10) {
-            left = 10;
-        }
-
-        // Проверяем, не выходит ли за верхний край
-        if (top < 10) {
-            top = 10;
-        }
+        if (left < 10) left = 10;
+        if (top < 10) top = 10;
 
         this.tooltip.style.left = `${left}px`;
         this.tooltip.style.top = `${top}px`;
@@ -176,54 +132,42 @@ class Chart {
         this.tooltip.style.display = 'none';
     }
 
-    getPadding() {
-        return {
-            left: 60,
-            right: 30,
-            top: 30,
-            bottom: 50
-        };
-    }
-
     draw() {
-        if (!this.ctx || this.canvas.width === 0) return;
+        if (!this.ctx || this.canvas.width === 0 || this.canvas.height === 0) return;
+        if (!this.config.data || !this.config.data.length) return;
 
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-        const padding = this.getPadding();
+        const padding = { left: 60, right: 30, top: 30, bottom: 50 };
         const width = this.canvas.width;
         const height = this.canvas.height;
         const chartWidth = width - padding.left - padding.right;
         const chartHeight = height - padding.top - padding.bottom;
 
-        this.drawAxes(padding, width, height, chartWidth, chartHeight);
+        this.drawAxes(padding, chartWidth, chartHeight);
         this.drawGrid(padding, chartWidth, chartHeight);
+        this.drawRectangles(padding, chartWidth, chartHeight);
         this.drawData(padding, chartWidth, chartHeight);
         this.drawLabels(padding, chartWidth, chartHeight);
     }
 
-    drawAxes(padding, width, height, chartWidth, chartHeight) {
+    drawAxes(padding, chartWidth, chartHeight) {
         this.ctx.beginPath();
         this.ctx.strokeStyle = '#ccc';
         this.ctx.lineWidth = 1;
 
-        // Y axis
         this.ctx.moveTo(padding.left, padding.top);
         this.ctx.lineTo(padding.left, padding.top + chartHeight);
-        // X axis
         this.ctx.moveTo(padding.left, padding.top + chartHeight);
         this.ctx.lineTo(padding.left + chartWidth, padding.top + chartHeight);
         this.ctx.stroke();
 
-        // Arrows
         this.ctx.beginPath();
-        // Y arrow
         this.ctx.moveTo(padding.left - 5, padding.top);
         this.ctx.lineTo(padding.left, padding.top - 5);
         this.ctx.lineTo(padding.left + 5, padding.top);
         this.ctx.fill();
 
-        // X arrow
         this.ctx.beginPath();
         this.ctx.moveTo(padding.left + chartWidth, padding.top + chartHeight - 5);
         this.ctx.lineTo(padding.left + chartWidth + 5, padding.top + chartHeight);
@@ -233,13 +177,12 @@ class Chart {
 
     drawGrid(padding, chartWidth, chartHeight) {
         const yTicks = 5;
-        const xTicks = Math.min(10, this.config.data.labels.length);
+        const xTicks = 8;
 
         this.ctx.save();
         this.ctx.strokeStyle = '#e9ecef';
         this.ctx.lineWidth = 0.5;
 
-        // Horizontal grid lines
         for (let i = 0; i <= yTicks; i++) {
             const y = padding.top + (chartHeight / yTicks) * i;
             this.ctx.beginPath();
@@ -248,7 +191,6 @@ class Chart {
             this.ctx.stroke();
         }
 
-        // Vertical grid lines
         for (let i = 0; i <= xTicks; i++) {
             const x = padding.left + (chartWidth / xTicks) * i;
             this.ctx.beginPath();
@@ -260,10 +202,88 @@ class Chart {
         this.ctx.restore();
     }
 
-    drawData(padding, chartWidth, chartHeight) {
-        const dataset = this.config.data.datasets[0];
-        const data = dataset.data;
+    drawRectangles(padding, chartWidth, chartHeight) {
+        const { usefulSignals = [], noises = [], f1MHz, f2MHz, data } = this.config;
 
+        if (usefulSignals.length === 0 && noises.length === 0) {
+            return;
+        }
+
+        const minValue = Math.min(...data);
+        const maxValue = Math.max(...data);
+        const valueRange = maxValue - minValue || 1;
+
+        const drawRect = (rect, color, label) => {
+            let rectF1 = rect.f1;
+            let rectF2 = rect.f2;
+
+            if (rectF1 > 1e6) rectF1 = rectF1 / 1e6;
+            if (rectF2 > 1e6) rectF2 = rectF2 / 1e6;
+
+            if (rectF2 < f1MHz || rectF1 > f2MHz) return;
+
+            const x1 = padding.left + ((rectF1 - f1MHz) / (f2MHz - f1MHz)) * chartWidth;
+            const x2 = padding.left + ((rectF2 - f1MHz) / (f2MHz - f1MHz)) * chartWidth;
+
+            const rectX = Math.max(padding.left, Math.min(x1, x2));
+            const rectWidth = Math.abs(x2 - x1);
+
+            if (rectWidth <= 1) return;
+
+            let yTop = padding.top;
+            let rectHeight = chartHeight;
+
+            if (rect.max !== undefined && rect.max > minValue) {
+                const boundedMax = Math.min(Math.max(rect.max, minValue), maxValue);
+                const normalizedY = (boundedMax - minValue) / valueRange;
+                yTop = padding.top + chartHeight - normalizedY * chartHeight;
+                rectHeight = padding.top + chartHeight - yTop;
+            }
+
+            // Рисуем заливку
+            this.ctx.save();
+            this.ctx.globalAlpha = 0.25;
+            this.ctx.fillStyle = color;
+            this.ctx.fillRect(rectX, yTop, rectWidth, rectHeight);
+
+            // Рисуем сплошную рамку (убрали пунктир)
+            this.ctx.globalAlpha = 0.8;
+            this.ctx.strokeStyle = color;
+            this.ctx.lineWidth = 1.5;
+            this.ctx.setLineDash([]); // Сплошная линия
+            this.ctx.strokeRect(rectX, yTop, rectWidth, rectHeight);
+
+            // Подпись
+            if (rectWidth > 30) {
+                this.ctx.globalAlpha = 0.9;
+                this.ctx.font = '10px sans-serif';
+                this.ctx.fillStyle = color;
+                this.ctx.textAlign = 'center';
+                const textX = rectX + rectWidth / 2;
+                const textY = yTop - 5;
+                if (textY > padding.top + 10) {
+                    this.ctx.fillText(label, textX, textY);
+                }
+            }
+
+            this.ctx.restore();
+        };
+
+        usefulSignals.forEach(signal => {
+            if (signal.f1 && signal.f2 && signal.f1 !== 0 && signal.f2 !== 0) {
+                drawRect(signal, '#4caf50', 'Сигнал');
+            }
+        });
+
+        noises.forEach(noise => {
+            if (noise.f1 && noise.f2 && noise.f1 !== 0 && noise.f2 !== 0) {
+                drawRect(noise, '#f44336', 'Помеха');
+            }
+        });
+    }
+
+    drawData(padding, chartWidth, chartHeight) {
+        const data = this.config.data;
         if (!data.length) return;
 
         const minValue = Math.min(...data);
@@ -276,69 +296,49 @@ class Chart {
             return { x, y, value };
         });
 
-        // Draw line
         this.ctx.beginPath();
-        this.ctx.strokeStyle = dataset.borderColor;
-        this.ctx.lineWidth = dataset.borderWidth;
+        this.ctx.strokeStyle = '#2196f3';
+        this.ctx.lineWidth = 1.5;
 
         points.forEach((point, i) => {
-            if (i === 0) {
-                this.ctx.moveTo(point.x, point.y);
-            } else {
-                this.ctx.lineTo(point.x, point.y);
-            }
+            if (i === 0) this.ctx.moveTo(point.x, point.y);
+            else this.ctx.lineTo(point.x, point.y);
         });
         this.ctx.stroke();
 
-        // Fill area
-        if (dataset.fill) {
-            this.ctx.beginPath();
-            this.ctx.moveTo(points[0].x, padding.top + chartHeight);
-            points.forEach(point => {
-                this.ctx.lineTo(point.x, point.y);
-            });
-            this.ctx.lineTo(points[points.length - 1].x, padding.top + chartHeight);
-            this.ctx.closePath();
-            this.ctx.fillStyle = dataset.backgroundColor;
-            this.ctx.fill();
-        }
-
-        // Draw points
-        if (dataset.pointRadius > 0) {
-            points.forEach(point => {
-                this.ctx.beginPath();
-                this.ctx.arc(point.x, point.y, dataset.pointRadius, 0, Math.PI * 2);
-                this.ctx.fillStyle = dataset.borderColor;
-                this.ctx.fill();
-            });
-        }
+        this.ctx.beginPath();
+        this.ctx.moveTo(points[0].x, padding.top + chartHeight);
+        points.forEach(point => {
+            this.ctx.lineTo(point.x, point.y);
+        });
+        this.ctx.lineTo(points[points.length - 1].x, padding.top + chartHeight);
+        this.ctx.closePath();
+        this.ctx.fillStyle = 'rgba(33, 150, 243, 0.1)';
+        this.ctx.fill();
     }
 
     drawLabels(padding, chartWidth, chartHeight) {
-        const labels = this.config.data.labels;
-        const dataset = this.config.data.datasets[0];
-        const data = dataset.data;
+        const data = this.config.data;
+        const { f1MHz, f2MHz } = this.config;
 
-        if (!labels.length) return;
+        if (!data.length) return;
 
         const minValue = Math.min(...data);
         const maxValue = Math.max(...data);
 
-        // X axis labels
-        const xTickCount = Math.min(8, labels.length);
+        const xTickCount = 8;
         for (let i = 0; i <= xTickCount; i++) {
-            const index = Math.floor((labels.length - 1) * (i / xTickCount));
+            const freq = f1MHz + (f2MHz - f1MHz) * (i / xTickCount);
             const x = padding.left + (chartWidth / xTickCount) * i;
 
             this.ctx.save();
             this.ctx.fillStyle = '#666';
             this.ctx.font = '11px sans-serif';
             this.ctx.textAlign = 'center';
-            this.ctx.fillText(labels[index], x, padding.top + chartHeight + 20);
+            this.ctx.fillText(freq.toFixed(2), x, padding.top + chartHeight + 20);
             this.ctx.restore();
         }
 
-        // Y axis labels
         const yTickCount = 5;
         for (let i = 0; i <= yTickCount; i++) {
             const value = minValue + (maxValue - minValue) * (i / yTickCount);
@@ -352,40 +352,25 @@ class Chart {
             this.ctx.restore();
         }
 
-        // Axis titles
         this.ctx.save();
         this.ctx.fillStyle = '#333';
         this.ctx.font = '12px sans-serif';
 
-        // X axis title
-        const xTitle = this.config.options?.scales?.x?.title?.text || 'Частота (МГц)';
         this.ctx.textAlign = 'center';
-        this.ctx.fillText(xTitle, padding.left + chartWidth / 2, this.canvas.height - 10);
+        this.ctx.fillText('Частота (МГц)', padding.left + chartWidth / 2, this.canvas.height - 10);
 
-        // Y axis title
-        const yTitle = this.config.options?.scales?.y?.title?.text || 'Амплитуда (dBm)';
         this.ctx.save();
         this.ctx.translate(20, padding.top + chartHeight / 2);
         this.ctx.rotate(-Math.PI / 2);
         this.ctx.textAlign = 'center';
-        this.ctx.fillText(yTitle, 0, 0);
+        this.ctx.fillText('Амплитуда (дБ)', 0, 0);
         this.ctx.restore();
 
         this.ctx.restore();
-
-        // Chart title
-        if (this.config.options?.plugins?.legend?.position === 'top') {
-            this.ctx.save();
-            this.ctx.fillStyle = '#333';
-            this.ctx.font = 'bold 14px sans-serif';
-            this.ctx.textAlign = 'center';
-            this.ctx.fillText(dataset.label, this.canvas.width / 2, 20);
-            this.ctx.restore();
-        }
     }
 
-    updateData(newData) {
-        this.config.data = newData;
+    update(config) {
+        this.config = { ...this.config, ...config };
         this.draw();
     }
 
@@ -402,4 +387,4 @@ class Chart {
     }
 }
 
-export default Chart;
+export default SpectrumChart;

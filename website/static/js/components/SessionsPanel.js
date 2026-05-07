@@ -4,9 +4,8 @@ import { store } from '../core/store.js';
 import dbApi from '../api/dbApi.js';
 import DateTimeRangePanel from './DateTimeRangePanel.js';
 import Chart from './Chart.js';
+import SpectrumChart from './SpectrumChart.js';
 
-// Импортируем CSS (если используется сборщик)
-// import '../css/sessionsPanel.css';
 
 class SessionsPanel extends Component {
     constructor() {
@@ -26,9 +25,14 @@ class SessionsPanel extends Component {
         this.error = null;
 
         this.chartInstance = null;
-        this.chartContainer = null;
 
         this.dateTimePanel = new DateTimeRangePanel();
+
+        // Состояние модальных окон
+        this.modalState = {
+            spectrumsModal: false,
+            detailsModal: false
+        };
     }
 
     formatApiDate(date, time) {
@@ -122,6 +126,9 @@ class SessionsPanel extends Component {
 
             console.log('Parsed spectrums count:', this.spectrumsList.length);
             this.isLoadingSpectrums = false;
+
+            // Открываем модальное окно со спектрограммами
+            this.modalState.spectrumsModal = true;
             this.updateUI();
 
         } catch (err) {
@@ -155,6 +162,9 @@ class SessionsPanel extends Component {
             }
 
             this.isLoadingSpectrum = false;
+
+            // Открываем окно деталей (не закрывая окно спектрограмм полностью)
+            this.modalState.detailsModal = true;
             this.updateUI();
 
             setTimeout(() => {
@@ -175,77 +185,30 @@ class SessionsPanel extends Component {
         }
 
         const spectrumData = this.currentSpectrumData.spectrum;
-        const f1 = this.currentSpectrumData.f1;
-        const f2 = this.currentSpectrumData.f2;
+        let f1 = this.currentSpectrumData.f1;
+        let f2 = this.currentSpectrumData.f2;
 
-        if (!spectrumData || spectrumData.length === 0) {
-            return;
-        }
+        if (f1 > 1e6) f1 = f1 / 1e6;
+        if (f2 > 1e6) f2 = f2 / 1e6;
 
         const chartContainer = this.element?.querySelector('.spectrum-chart-container');
-        if (!chartContainer) {
-            return;
-        }
+        if (!chartContainer) return;
 
         chartContainer.innerHTML = '';
 
-        const step = (f2 - f1) / (spectrumData.length - 1);
-        const labels = spectrumData.map((_, index) => {
-            const freq = f1 + (index * step);
-            return freq.toFixed(3);
-        });
-
         const chartConfig = {
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Спектрограмма',
-                    data: spectrumData,
-                    borderColor: '#2196f3',
-                    backgroundColor: 'rgba(33, 150, 243, 0.1)',
-                    borderWidth: 1.5,
-                    pointRadius: 0,
-                    fill: true
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                scales: {
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Частота (МГц)'
-                        }
-                    },
-                    y: {
-                        title: {
-                            display: true,
-                            text: 'Амплитуда (дБ)'
-                        }
-                    }
-                },
-                plugins: {
-                    tooltip: {
-                        callbacks: {
-                            label: (context) => {
-                                return `Амплитуда: ${context.raw.toFixed(2)} дБ`;
-                            }
-                        }
-                    },
-                    legend: {
-                        position: 'top'
-                    }
-                }
-            }
+            data: spectrumData,
+            f1MHz: f1,
+            f2MHz: f2,
+            usefulSignals: this.getUsefulSignals(this.currentSpectrumData),
+            noises: this.getRealNoises(this.currentSpectrumData.noises)
         };
 
-        try {
-            this.chartInstance = new Chart(chartContainer, chartConfig);
-        } catch (error) {
-            console.error('Error creating chart:', error);
-            chartContainer.innerHTML = '<div class="error-message" style="padding:20px;text-align:center;">Ошибка создания графика</div>';
+        if (this.chartInstance) {
+            this.chartInstance.destroy();
         }
+
+        this.chartInstance = new SpectrumChart(chartContainer, chartConfig);
     }
 
     destroyChart() {
@@ -255,27 +218,41 @@ class SessionsPanel extends Component {
         }
     }
 
-    onSessionClick(session) {
-        console.log('Selected session:', session);
+    closeModal(modalName) {
+        this.modalState[modalName] = false;
+        this.updateUI();
+    }
 
-        this.selectedSession = session;
-        this.spectrumsList = [];
+    // Закрыть окно спектрограмм и вернуться к списку задач
+    closeSpectrumsModal() {
+        this.modalState.spectrumsModal = false;
+        this.modalState.detailsModal = false;
+        this.selectedSession = null;
         this.selectedSpectrum = null;
         this.currentSpectrumData = null;
-
+        this.spectrumsList = [];
         this.destroyChart();
         this.updateUI();
+    }
+
+    // Закрыть окно деталей - просто закрываем detailsModal, spectrumsModal остается открытым
+    closeDetailsModal() {
+        this.modalState.detailsModal = false;
+        this.selectedSpectrum = null;
+        this.currentSpectrumData = null;
+        this.destroyChart();
+        this.updateUI();
+    }
+
+    onSessionClick(session) {
+        console.log('Selected session:', session);
+        this.selectedSession = session;
         this.loadSpectrumsForSession(session.id);
     }
 
     onSpectrumClick(spectrum) {
         console.log('Selected spectrum:', spectrum);
-
         this.selectedSpectrum = spectrum;
-        this.currentSpectrumData = null;
-
-        this.destroyChart();
-        this.updateUI();
         this.loadSpectrumById(spectrum.id);
     }
 
@@ -335,63 +312,258 @@ class SessionsPanel extends Component {
         return data.useful_signals || data.channels || [];
     }
 
-    scrollToPanel(panelElement) {
-        if (!panelElement) return;
+    // Рендер модального окна для спектрограмм
+    renderSpectrumsModal() {
+        const overlay = this.createElement('div', { className: 'modal-overlay' });
 
-        // Находим скроллируемый контейнер
-        const scrollContainer = this.element?.querySelector('.sessions-main-content');
+        const modal = this.createElement('div', { className: 'modal-content spectrums-modal' });
 
-        if (scrollContainer) {
-            // Вычисляем позицию элемента относительно скролл-контейнера
-            const containerRect = scrollContainer.getBoundingClientRect();
-            const elementRect = panelElement.getBoundingClientRect();
+        // Заголовок
+        const modalHeader = this.createElement('div', { className: 'modal-header' });
 
-            // Вычисляем отступ с учетом sticky-элементов (кнопки навигации)
-            const offset = elementRect.top - containerRect.top + scrollContainer.scrollTop - 10; // 10px дополнительный отступ
+        const backBtn = this.createElement('button', {
+            className: 'modal-back-btn',
+            onclick: () => this.closeSpectrumsModal()
+        });
+        backBtn.innerHTML = '← Назад к задачам';
 
-            scrollContainer.scrollTo({
-                top: offset,
-                behavior: 'smooth'
-            });
+        const title = this.createElement('h3', { className: 'modal-title' },
+            `Задача: ${this.selectedSession?.id}`);
+
+        const closeBtn = this.createElement('button', {
+            className: 'modal-close-btn',
+            onclick: () => this.closeSpectrumsModal()
+        });
+        closeBtn.innerHTML = '×';
+
+        modalHeader.appendChild(backBtn);
+        modalHeader.appendChild(title);
+        modalHeader.appendChild(closeBtn);
+
+        // Тело
+        const modalBody = this.createElement('div', { className: 'modal-body' });
+
+        if (this.isLoadingSpectrums) {
+            modalBody.appendChild(this.createElement('div', { className: 'loading-message' }, 'Загрузка спектрограмм...'));
+        } else if (!this.spectrumsList || this.spectrumsList.length === 0) {
+            modalBody.appendChild(this.createElement('div', { className: 'empty-message' }, 'Нет спектрограмм для выбранной задачи'));
         } else {
-            // Fallback: используем стандартный скролл с отступом для header
-            const headerHeight = 100; // Высота header + отступ
-            const elementPosition = panelElement.getBoundingClientRect().top;
-            const offsetPosition = elementPosition + window.pageYOffset - headerHeight;
-
-            window.scrollTo({
-                top: offsetPosition,
-                behavior: 'smooth'
-            });
+            const table = this.renderSpectrumsTable();
+            modalBody.appendChild(table);
         }
-    }
 
-    getRowClassName(hasNoises, isSelected) {
-        if (isSelected) return 'row-selected';
-        return hasNoises ? 'row-noises' : 'row-clean';
-    }
+        modal.appendChild(modalHeader);
+        modal.appendChild(modalBody);
+        overlay.appendChild(modal);
 
-    renderNavigationButtons() {
-        const navContainer = this.createElement('div', { className: 'sessions-nav-buttons' });
-
-        const buttons = [
-            { id: 'tasks-list', label: 'Список задач' },
-            { id: 'spectro-list', label: 'Список спектрограмм' },
-            { id: 'detail-spectro-list', label: 'Детали спектрограммы' }
-        ];
-
-        buttons.forEach(btn => {
-            const button = this.createElement('button', {
-                className: 'nav-btn',
-                onclick: () => {
-                    const panel = this.element?.querySelector(`#${btn.id}`);
-                    this.scrollToPanel(panel);
-                }
-            }, btn.label);
-            navContainer.appendChild(button);
+        // Закрытие по клику на overlay
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                this.closeSpectrumsModal();
+            }
         });
 
-        return navContainer;
+        return overlay;
+    }
+
+    renderSpectrumsTable() {
+        const table = this.createElement('table', { className: 'sessions-table' });
+
+        const thead = this.createElement('thead');
+        const headerRow = this.createElement('tr');
+        const headers = ['ID', 'Дата', 'С помехами', 'Без помех', 'Сигналов'];
+
+        headers.forEach(headerText => {
+            const th = this.createElement('th', {}, headerText);
+            headerRow.appendChild(th);
+        });
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
+
+        const tbody = this.createElement('tbody');
+
+        this.spectrumsList.forEach(spectrum => {
+            const hasNoises = this.hasNoisesInSpectrum(spectrum);
+            const row = this.createElement('tr', {
+                className: hasNoises ? 'row-noises' : 'row-clean',
+                onclick: () => this.onSpectrumClick(spectrum)
+            });
+
+            const cells = [
+                spectrum.id,
+                this.formatDateTime(spectrum.dt),
+                spectrum.channels_w_noises || 0,
+                spectrum.channels_wo_noises || 0,
+                spectrum.channels_cnt || 0
+            ];
+
+            cells.forEach(cellData => {
+                const td = this.createElement('td', {}, String(cellData));
+                row.appendChild(td);
+            });
+
+            tbody.appendChild(row);
+        });
+
+        table.appendChild(tbody);
+        return table;
+    }
+
+    // Рендер модального окна для деталей спектрограммы (поверх окна спектрограмм)
+    renderDetailsModal() {
+        const overlay = this.createElement('div', { className: 'modal-overlay details-overlay' });
+
+        const modal = this.createElement('div', { className: 'modal-content details-modal' });
+
+        // Заголовок с кнопкой "Назад к спектрограммам"
+        const modalHeader = this.createElement('div', { className: 'modal-header' });
+
+        const backBtn = this.createElement('button', {
+            className: 'modal-back-btn',
+            onclick: () => this.closeDetailsModal()
+        });
+        backBtn.innerHTML = '← Назад к спектрограммам';
+
+        const title = this.createElement('h3', { className: 'modal-title' },
+            `Детали спектрограммы: ${this.selectedSpectrum?.id}`);
+
+        const closeBtn = this.createElement('button', {
+            className: 'modal-close-btn',
+            onclick: () => this.closeDetailsModal()
+        });
+        closeBtn.innerHTML = '×';
+
+        modalHeader.appendChild(backBtn);
+        modalHeader.appendChild(title);
+        modalHeader.appendChild(closeBtn);
+
+        // Тело
+        const modalBody = this.createElement('div', { className: 'modal-body' });
+
+        if (this.isLoadingSpectrum) {
+            modalBody.appendChild(this.createElement('div', { className: 'loading-message' }, 'Загрузка спектрограммы...'));
+        } else if (!this.currentSpectrumData) {
+            modalBody.appendChild(this.createElement('div', { className: 'empty-message' }, 'Данные спектрограммы не загружены'));
+        } else {
+            modalBody.appendChild(this.renderSpectrumDetailsContent());
+        }
+
+        modal.appendChild(modalHeader);
+        modal.appendChild(modalBody);
+        overlay.appendChild(modal);
+
+        // Закрытие по клику на overlay
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                this.closeDetailsModal();
+            }
+        });
+
+        return overlay;
+    }
+
+    renderSpectrumDetailsContent() {
+        const data = this.currentSpectrumData;
+        const usefulSignals = this.getUsefulSignals(data);
+        const realNoises = this.getRealNoises(data.noises);
+
+        const container = this.createElement('div', { className: 'spectrum-details' });
+
+        // Таблица с основной информацией
+        const infoTable = this.createElement('table', { className: 'spectrum-details-table' });
+        const infoRows = [
+            { label: 'Начало полосы (f1):', value: `${this.formatNumber(data.f1)} МГц` },
+            { label: 'Конец полосы (f2):', value: `${this.formatNumber(data.f2)} МГц` },
+            { label: 'Уровень шума:', value: `${this.formatNumber(data.noise_level)} дБ` },
+            { label: 'Порог обнаружения:', value: `${this.formatNumber(data.threshold)} дБ` }
+        ];
+
+        infoRows.forEach(row => {
+            const tr = this.createElement('tr');
+            const tdLabel = this.createElement('td', {}, row.label);
+            const tdValue = this.createElement('td', {}, row.value);
+            tr.appendChild(tdLabel);
+            tr.appendChild(tdValue);
+            infoTable.appendChild(tr);
+        });
+        container.appendChild(infoTable);
+
+        // График
+        const chartSection = this.createElement('div', { className: 'chart-section' });
+        const chartTitle = this.createElement('h4', {}, 'Спектрограмма');
+        const chartContainer = this.createElement('div', {
+            className: 'spectrum-chart-container',
+            style: { height: '300px', width: '100%' }
+        });
+        chartSection.appendChild(chartTitle);
+        chartSection.appendChild(chartContainer);
+        container.appendChild(chartSection);
+
+        // Полезные сигналы
+        if (usefulSignals && usefulSignals.length > 0) {
+            const signalsSection = this.createElement('div', { className: 'signals-section' });
+            const signalsTitle = this.createElement('h5', {}, `Полезные сигналы (${usefulSignals.length})`);
+            signalsSection.appendChild(signalsTitle);
+
+            const signalsTable = this.createElement('table', { className: 'signals-table' });
+            const signalsThead = this.createElement('thead');
+            const signalsHeaderRow = this.createElement('tr');
+            ['f1 (МГц)', 'f2 (МГц)', 'max (дБ)'].forEach(text => {
+                const th = this.createElement('th', {}, text);
+                signalsHeaderRow.appendChild(th);
+            });
+            signalsThead.appendChild(signalsHeaderRow);
+            signalsTable.appendChild(signalsThead);
+
+            const signalsTbody = this.createElement('tbody');
+            usefulSignals.forEach(signal => {
+                const row = this.createElement('tr');
+                const td1 = this.createElement('td', {}, this.formatNumber(signal.f1));
+                const td2 = this.createElement('td', {}, this.formatNumber(signal.f2));
+                const td3 = this.createElement('td', {}, this.formatNumber(signal.max));
+                row.appendChild(td1);
+                row.appendChild(td2);
+                row.appendChild(td3);
+                signalsTbody.appendChild(row);
+            });
+            signalsTable.appendChild(signalsTbody);
+            signalsSection.appendChild(signalsTable);
+            container.appendChild(signalsSection);
+        }
+
+        // Помехи
+        if (realNoises && realNoises.length > 0) {
+            const noisesSection = this.createElement('div', { className: 'noises-section' });
+            const noisesTitle = this.createElement('h5', {}, `Помехи (${realNoises.length})`);
+            noisesSection.appendChild(noisesTitle);
+
+            const noisesTable = this.createElement('table', { className: 'noises-table' });
+            const noisesThead = this.createElement('thead');
+            const noisesHeaderRow = this.createElement('tr');
+            ['f1 (МГц)', 'f2 (МГц)', 'max (дБ)'].forEach(text => {
+                const th = this.createElement('th', {}, text);
+                noisesHeaderRow.appendChild(th);
+            });
+            noisesThead.appendChild(noisesHeaderRow);
+            noisesTable.appendChild(noisesThead);
+
+            const noisesTbody = this.createElement('tbody');
+            realNoises.forEach(noise => {
+                const row = this.createElement('tr');
+                const td1 = this.createElement('td', {}, this.formatNumber(noise.f1));
+                const td2 = this.createElement('td', {}, this.formatNumber(noise.f2));
+                const td3 = this.createElement('td', {}, this.formatNumber(noise.max));
+                row.appendChild(td1);
+                row.appendChild(td2);
+                row.appendChild(td3);
+                noisesTbody.appendChild(row);
+            });
+            noisesTable.appendChild(noisesTbody);
+            noisesSection.appendChild(noisesTable);
+            container.appendChild(noisesSection);
+        }
+
+        return container;
     }
 
     renderSessionsList() {
@@ -427,12 +599,9 @@ class SessionsPanel extends Component {
         const tbody = this.createElement('tbody');
 
         this.sessions.forEach(session => {
-            const isSelected = this.selectedSession && this.selectedSession.id === session.id;
             const hasNoises = this.hasNoisesInSession(session);
-            const rowClassName = this.getRowClassName(hasNoises, isSelected);
-
             const row = this.createElement('tr', {
-                className: rowClassName,
+                className: hasNoises ? 'row-noises' : 'row-clean',
                 onclick: () => this.onSessionClick(session)
             });
 
@@ -461,173 +630,37 @@ class SessionsPanel extends Component {
         return table;
     }
 
-    renderSpectrumsList() {
-        if (this.isLoadingSpectrums) {
-            return this.createElement('div', { className: 'loading-message' }, 'Загрузка спектрограмм...');
-        }
-
-        if (!this.selectedSession) {
-            return this.createElement('div', { className: 'empty-message' }, 'Выберите задачу для просмотра спектрограмм');
-        }
-
-        if (!this.spectrumsList || this.spectrumsList.length === 0) {
-            return this.createElement('div', { className: 'empty-message' }, 'Нет спектрограмм для выбранной задачи');
-        }
-
-        const table = this.createElement('table', { className: 'sessions-table' });
-
-        const thead = this.createElement('thead');
-        const headerRow = this.createElement('tr');
-
-        const headers = ['ID', 'Дата', 'С помехами', 'Без помех', 'Сигналов'];
-
-        headers.forEach(headerText => {
-            const th = this.createElement('th', {}, headerText);
-            headerRow.appendChild(th);
-        });
-
-        thead.appendChild(headerRow);
-        table.appendChild(thead);
-
-        const tbody = this.createElement('tbody');
-
-        this.spectrumsList.forEach(spectrum => {
-            const isSelected = this.selectedSpectrum && this.selectedSpectrum.id === spectrum.id;
-            const hasNoises = this.hasNoisesInSpectrum(spectrum);
-            const rowClassName = this.getRowClassName(hasNoises, isSelected);
-
-            const row = this.createElement('tr', {
-                className: rowClassName,
-                onclick: () => this.onSpectrumClick(spectrum)
-            });
-
-            const cells = [
-                spectrum.id,
-                this.formatDateTime(spectrum.dt),
-                spectrum.channels_w_noises || 0,
-                spectrum.channels_wo_noises || 0,
-                spectrum.channels_cnt || 0
-            ];
-
-            cells.forEach(cellData => {
-                const td = this.createElement('td', {}, String(cellData));
-                row.appendChild(td);
-            });
-
-            tbody.appendChild(row);
-        });
-
-        table.appendChild(tbody);
-        return table;
-    }
-
-    renderSpectrumDetails() {
-        if (this.isLoadingSpectrum) {
-            return this.createElement('div', { className: 'loading-message' }, 'Загрузка спектрограммы...');
-        }
-
-        if (!this.selectedSpectrum) {
-            return this.createElement('div', { className: 'empty-message' }, 'Выберите спектрограмму для просмотра');
-        }
-
-        if (!this.currentSpectrumData) {
-            return this.createElement('div', { className: 'empty-message' }, 'Данные спектрограммы не загружены');
-        }
-
-        const data = this.currentSpectrumData;
-        const usefulSignals = this.getUsefulSignals(data);
-        const realNoises = this.getRealNoises(data.noises);
-
-        const container = this.createElement('div', { className: 'spectrum-details' });
-
-        let detailsHtml = `
-            <div style="margin-bottom: 15px;">
-                <h4>Данные спектрограммы</h4>
-                <table class="spectrum-details-table">
-                    <tr><td><strong>Начало полосы (f1):</strong></td><td>${this.formatNumber(data.f1)} МГц</td></tr>
-                    <tr><td><strong>Конец полосы (f2):</strong></td><td>${this.formatNumber(data.f2)} МГц</td></tr>
-                    <tr><td><strong>Уровень шума:</strong></td><td>${this.formatNumber(data.noise_level)} дБ</td></tr>
-                    <tr><td><strong>Порог обнаружения:</strong></td><td>${this.formatNumber(data.threshold)} дБ</td></tr>
-                </table>
-            </div>
-            <div>
-                <h4>Спектрограмма</h4>
-                <div class="spectrum-chart-container" style="height: 300px; width: 100%; background: #fff; border-radius: 6px; border: 1px solid #e0e0e0;"></div>
-            </div>
-        `;
-
-        if (usefulSignals && usefulSignals.length > 0) {
-            detailsHtml += `
-                <div class="signals-section">
-                    <h5>Полезные сигналы (${usefulSignals.length})</h5>
-                    <div class="scrollable-table">
-                        <table class="signals-table">
-                            <thead><tr><th>f1 (МГц)</th><th>f2 (МГц)</th><th>max (дБ)</th></tr></thead>
-                            <tbody>
-                                ${usefulSignals.map(signal => `
-                                    <tr>
-                                        <td>${this.formatNumber(signal.f1)}</td>
-                                        <td>${this.formatNumber(signal.f2)}</td>
-                                        <td>${this.formatNumber(signal.max)}</td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            `;
-        }
-
-        if (realNoises && realNoises.length > 0) {
-            detailsHtml += `
-                <div class="noises-section">
-                    <h5>Помехи (${realNoises.length})</h5>
-                    <div class="scrollable-table">
-                        <table class="noises-table">
-                            <thead><tr><th>f1 (МГц)</th><th>f2 (МГц)</th><th>max (дБ)</th></tr></thead>
-                            <tbody>
-                                ${realNoises.map(noise => `
-                                    <tr>
-                                        <td>${this.formatNumber(noise.f1)}</td>
-                                        <td>${this.formatNumber(noise.f2)}</td>
-                                        <td>${this.formatNumber(noise.max)}</td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            `;
-        }
-
-        container.innerHTML = detailsHtml;
-        return container;
-    }
-
     updateUI() {
-        const sessionsContainer = this.element?.querySelector('#tasks-list .sessions-list-container');
-        const spectrumsContainer = this.element?.querySelector('#spectro-list .spectrums-list-container');
-        const detailsContainer = this.element?.querySelector('#detail-spectro-list .spectrum-details-container');
+        const mainContainer = this.element?.querySelector('.sessions-main-container');
+        if (!mainContainer) return;
 
-        if (sessionsContainer) {
-            sessionsContainer.innerHTML = '';
+        // Очищаем основной контейнер
+        while (mainContainer.firstChild) {
+            mainContainer.removeChild(mainContainer.firstChild);
+        }
+
+        // Если открыто окно деталей - показываем его поверх
+        if (this.modalState.detailsModal) {
+            const modal = this.renderDetailsModal();
+            mainContainer.appendChild(modal);
+        }
+        // Если открыто окно спектрограмм (и нет деталей) - показываем его
+        else if (this.modalState.spectrumsModal) {
+            const modal = this.renderSpectrumsModal();
+            mainContainer.appendChild(modal);
+        }
+        // Иначе показываем список задач
+        else {
+            const sessionsContainer = this.createElement('div', { className: 'sessions-list-container' });
             sessionsContainer.appendChild(this.renderSessionsList());
+            mainContainer.appendChild(sessionsContainer);
         }
 
-        if (spectrumsContainer) {
-            spectrumsContainer.innerHTML = '';
-            spectrumsContainer.appendChild(this.renderSpectrumsList());
-        }
-
-        if (detailsContainer) {
-            detailsContainer.innerHTML = '';
-            detailsContainer.appendChild(this.renderSpectrumDetails());
-
-            if (this.currentSpectrumData && this.currentSpectrumData.spectrum) {
-                setTimeout(() => {
-                    this.createChart();
-                }, 100);
-            }
+        // Если есть график и он должен отображаться, создаем его
+        if (this.modalState.detailsModal && this.currentSpectrumData) {
+            setTimeout(() => {
+                this.createChart();
+            }, 100);
         }
     }
 
@@ -641,39 +674,15 @@ class SessionsPanel extends Component {
         datePanel.style.marginBottom = '15px';
         container.appendChild(datePanel);
 
-        const navButtons = this.renderNavigationButtons();
-        container.appendChild(navButtons);
-
         const loadButton = this.createElement('button', {
             className: 'load-sessions-btn',
             onclick: () => this.loadSessions(),
         }, this.isLoadingSessions ? 'Загрузка...' : 'Загрузить задачи');
         container.appendChild(loadButton);
 
-        const mainContent = this.createElement('div', { className: 'sessions-main-content' });
-
-        // Панель 1: Список задач
-        const panel1 = this.createElement('div', { id: 'tasks-list', className: 'sessions-panel-card' });
-        panel1.appendChild(this.createElement('h3', {}, 'Список задач'));
-        const sessionsContainer = this.createElement('div', { className: 'sessions-list-container' });
-        panel1.appendChild(sessionsContainer);
-
-        // Панель 2: Список спектрограмм
-        const panel2 = this.createElement('div', { id: 'spectro-list', className: 'sessions-panel-card' });
-        panel2.appendChild(this.createElement('h3', {}, 'Спектрограммы'));
-        const spectrumsContainer = this.createElement('div', { className: 'spectrums-list-container' });
-        panel2.appendChild(spectrumsContainer);
-
-        // Панель 3: Детали спектрограммы
-        const panel3 = this.createElement('div', { id: 'detail-spectro-list', className: 'sessions-panel-card' });
-        panel3.appendChild(this.createElement('h3', {}, 'Детали спектрограммы'));
-        const detailsContainer = this.createElement('div', { className: 'spectrum-details-container' });
-        panel3.appendChild(detailsContainer);
-
-        mainContent.appendChild(panel1);
-        mainContent.appendChild(panel2);
-        mainContent.appendChild(panel3);
-        container.appendChild(mainContent);
+        // Основной контейнер для содержимого и модальных окон
+        this.mainContainer = this.createElement('div', { className: 'sessions-main-container' });
+        container.appendChild(this.mainContainer);
 
         this.element = container;
 
@@ -692,12 +701,161 @@ class SessionsPanel extends Component {
 
     mount() {
         console.log('SessionsPanel mounted');
+
+        // Добавляем стили для модальных окон, если их нет
+        this.addModalStyles();
+
         if (window.app?.store) {
             this.unsubscribe = window.app.store.subscribe((state) => this.onStoreUpdate(state));
         }
         setTimeout(() => {
             this.loadSessions();
         }, 100);
+    }
+
+    addModalStyles() {
+        if (document.getElementById('sessions-modal-styles')) return;
+
+        const style = document.createElement('style');
+        style.id = 'sessions-modal-styles';
+        style.textContent = `
+            /* Модальные окна */
+            .modal-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(0, 0, 0, 0.5);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 1000;
+                backdrop-filter: blur(3px);
+                z-index: 1100;
+            }
+            
+            .details-overlay {
+                z-index: 1100;
+            }
+            
+            .modal-content {
+                background-color: #fff;
+                border-radius: 12px;
+                width: 90%;
+                max-width: 1200px;
+                max-height: 85vh;
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            }
+            
+            .spectrums-modal,
+            .details-modal {
+                width: 90%;
+                max-width: 1200px;
+            }
+            
+            .modal-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 16px 20px;
+                border-bottom: 1px solid #e0e0e0;
+                background-color: #f8f9fa;
+                flex-shrink: 0;
+            }
+            
+            .modal-back-btn {
+                background: none;
+                border: none;
+                cursor: pointer;
+                font-size: 14px;
+                color: #2196f3;
+                padding: 8px 12px;
+                border-radius: 6px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                transition: all 0.2s;
+            }
+            
+            .modal-back-btn:hover {
+                background-color: #e3f2fd;
+            }
+            
+            .modal-title {
+                margin: 0;
+                font-size: 18px;
+                font-weight: 500;
+                color: #333;
+            }
+            
+            .modal-close-btn {
+                background: none;
+                border: none;
+                font-size: 24px;
+                cursor: pointer;
+                color: #999;
+                padding: 0 8px;
+                transition: color 0.2s;
+            }
+            
+            .modal-close-btn:hover {
+                color: #333;
+            }
+            
+            .modal-body {
+                padding: 20px;
+                overflow-y: auto;
+                flex: 1;
+            }
+            
+            .chart-section {
+                margin: 20px 0;
+            }
+            
+            .chart-section h4 {
+                margin: 0 0 10px 0;
+                font-size: 16px;
+                color: #333;
+            }
+            
+            .spectrum-chart-container {
+                background: #fff;
+                border-radius: 6px;
+                border: 1px solid #e0e0e0;
+                min-height: 300px;
+            }
+            
+            @media (max-width: 768px) {
+                .modal-content {
+                    width: 95%;
+                    max-height: 90vh;
+                }
+                
+                .modal-header {
+                    padding: 12px 16px;
+                    flex-wrap: wrap;
+                    gap: 10px;
+                }
+                
+                .modal-back-btn {
+                    font-size: 12px;
+                    padding: 6px 10px;
+                }
+                
+                .modal-title {
+                    font-size: 14px;
+                }
+                
+                .modal-body {
+                    padding: 15px;
+                }
+            }
+        `;
+        document.head.appendChild(style);
     }
 
     unmount() {

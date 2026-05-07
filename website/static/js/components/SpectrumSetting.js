@@ -121,6 +121,7 @@ class SpectrumSetting extends Component {
                 borderRadius: '4px',
                 cursor: 'pointer',
                 fontSize: '14px'
+
             },
             onclick: () => this.resetToDefaults()
         }, 'Сбросить к значениям по умолчанию');
@@ -177,7 +178,7 @@ class SpectrumSetting extends Component {
             htmlFor: id,
             style: {
                 fontWeight: '500',
-                fontSize: '13px',
+                fontSize: '16px',
                 color: '#333'
             }
         }, label);
@@ -200,9 +201,10 @@ class SpectrumSetting extends Component {
             style: {
                 flex: 1,
                 padding: '8px',
-                border: '1px solid #ddd',
+                border: '1px solid black',
                 borderRadius: '4px',
-                fontSize: '14px'
+                fontSize: '16px',
+                maxWidth:'100px',
             },
             onchange: (e) => this.updateParam(id, parseFloat(e.target.value))
         });
@@ -213,8 +215,8 @@ class SpectrumSetting extends Component {
         if (unit) {
             const unitSpan = this.createElement('span', {
                 style: {
-                    fontSize: '12px',
-                    color: '#666'
+                    fontSize: '16px',
+                    color: 'black'
                 }
             }, unit);
             inputWrapper.appendChild(unitSpan);
@@ -339,7 +341,7 @@ class SpectrumSetting extends Component {
                 gain: Number(gain)
             });
 
-            console.log('✅ Received spectrogram data:', {
+            console.log(' Received spectrogram data:', {
                 hasF1: !!result.f1,
                 hasF2: !!result.f2,
                 pointsCount: result.points?.length,
@@ -352,7 +354,7 @@ class SpectrumSetting extends Component {
             store.setNestedState('spectrogramm.lastUpdate', Date.now());
 
         } catch (error) {
-            console.error('❌ Error getting spectrogram:', error);
+            console.error(' Error getting spectrogram:', error);
             store.setNestedState('spectrogramm.data', null);
             store.setNestedState('spectrogramm.isLoading', false);
             store.setNestedState('spectrogramm.error', error.message);
