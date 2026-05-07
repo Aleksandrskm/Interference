@@ -36,7 +36,9 @@
     background-color: var(--bg-tertiary);
     border-radius: 8px;
 }
-
+#rss-id,#f1,#f2{
+    max-width:150px ;
+}
 /* Чекбоксы и радио */
 .checkbox-wrapper,
 .radio-wrapper {

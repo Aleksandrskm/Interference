@@ -14,7 +14,7 @@ const routes = {
         const { default: SessionsPages } = await import('./pages/SessionsPages.js');
         return SessionsPages;
     },
-    '/interference': async () => {  // Новый путь для стартовой страницы
+    '/interference': async () => {
         console.log('Loading StartPage');
         const { default: StartPage } = await import('./pages/StartPage.js');
         return StartPage;
