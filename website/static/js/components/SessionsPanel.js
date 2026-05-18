@@ -328,7 +328,7 @@ class SessionsPanel extends Component {
         backBtn.innerHTML = '← Назад к задачам';
 
         const title = this.createElement('h3', { className: 'modal-title' },
-            `Задача: ${this.selectedSession?.id}`);
+            `Список спектрограмм: Задача: ${this.selectedSession?.id}`);
 
         const closeBtn = this.createElement('button', {
             className: 'modal-close-btn',
@@ -425,7 +425,8 @@ class SessionsPanel extends Component {
         backBtn.innerHTML = '← Назад к спектрограммам';
 
         const title = this.createElement('h3', { className: 'modal-title' },
-            `Детали спектрограммы: ${this.selectedSpectrum?.id}`);
+            `Задача: ${this.selectedSession?.id} 
+            Спектрограмма: ${this.selectedSpectrum?.id}`);
 
         const closeBtn = this.createElement('button', {
             className: 'modal-close-btn',
@@ -493,7 +494,7 @@ class SessionsPanel extends Component {
         const chartTitle = this.createElement('h4', {}, 'Спектрограмма');
         const chartContainer = this.createElement('div', {
             className: 'spectrum-chart-container',
-            style: { height: '300px', width: '100%' }
+            style: {  width: '100%' }
         });
         chartSection.appendChild(chartTitle);
         chartSection.appendChild(chartContainer);
@@ -669,17 +670,19 @@ class SessionsPanel extends Component {
 
         const title = this.createElement('h2', {}, 'Результаты задач');
         container.appendChild(title);
+        const containerBtns = this.createElement('div', { className: 'contaoner-btn' });
 
         const datePanel = this.dateTimePanel.render();
         datePanel.style.marginBottom = '15px';
-        container.appendChild(datePanel);
-
+        // container.appendChild(datePanel);
+        containerBtns.appendChild(datePanel);
         const loadButton = this.createElement('button', {
             className: 'load-sessions-btn',
             onclick: () => this.loadSessions(),
         }, this.isLoadingSessions ? 'Загрузка...' : 'Загрузить задачи');
-        container.appendChild(loadButton);
-
+        // container.appendChild(loadButton);
+        containerBtns.appendChild(loadButton);
+        container.appendChild(containerBtns);
         // Основной контейнер для содержимого и модальных окон
         this.mainContainer = this.createElement('div', { className: 'sessions-main-container' });
         container.appendChild(this.mainContainer);
@@ -825,7 +828,7 @@ class SessionsPanel extends Component {
             .spectrum-chart-container {
                 background: #fff;
                 border-radius: 6px;
-                border: 1px solid #e0e0e0;
+                border: 1px solid black;
                 min-height: 300px;
             }
             
