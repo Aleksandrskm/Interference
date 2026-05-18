@@ -153,8 +153,8 @@ export class SpectrumChart {
 
     drawAxes(padding, chartWidth, chartHeight) {
         this.ctx.beginPath();
-        this.ctx.strokeStyle = '#ccc';
-        this.ctx.lineWidth = 1;
+        this.ctx.strokeStyle = 'black';
+        this.ctx.lineWidth = 2;
 
         this.ctx.moveTo(padding.left, padding.top);
         this.ctx.lineTo(padding.left, padding.top + chartHeight);
@@ -180,7 +180,7 @@ export class SpectrumChart {
         const xTicks = 8;
 
         this.ctx.save();
-        this.ctx.strokeStyle = '#e9ecef';
+        this.ctx.strokeStyle = 'black';
         this.ctx.lineWidth = 0.5;
 
         for (let i = 0; i <= yTicks; i++) {
@@ -332,7 +332,7 @@ export class SpectrumChart {
             const x = padding.left + (chartWidth / xTickCount) * i;
 
             this.ctx.save();
-            this.ctx.fillStyle = '#666';
+            this.ctx.fillStyle = 'black';
             this.ctx.font = '11px sans-serif';
             this.ctx.textAlign = 'center';
             this.ctx.fillText(freq.toFixed(2), x, padding.top + chartHeight + 20);
@@ -345,7 +345,7 @@ export class SpectrumChart {
             const y = padding.top + chartHeight - (chartHeight / yTickCount) * i;
 
             this.ctx.save();
-            this.ctx.fillStyle = '#666';
+            this.ctx.fillStyle = 'black';
             this.ctx.font = '11px sans-serif';
             this.ctx.textAlign = 'right';
             this.ctx.fillText(value.toFixed(1), padding.left - 8, y + 3);

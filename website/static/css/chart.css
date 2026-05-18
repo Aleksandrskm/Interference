@@ -25,7 +25,7 @@
     z-index: var(--z-tooltip);
     box-shadow: var(--shadow-sm);
     backdrop-filter: blur(4px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid black;
     max-width: 280px;
     word-break: break-word;
     line-height: 1.4;

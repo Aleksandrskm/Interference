@@ -142,7 +142,7 @@ class SpectrogrammChart extends Component {
                 this.chart = new Chart(this.chartContainer, config);
                 this.hasValidData = true;
 
-                console.log('✅ Chart created successfully');
+                console.log('Chart created successfully');
             } catch (error) {
                 console.error('Error creating/updating chart:', error);
                 this.showPlaceholder();

@@ -166,6 +166,12 @@ select:focus {
 .content-view{
     width: 100%;
 }
+.contaoner-btn{
+    display: flex;
+    overflow-x: auto;
+    min-height: 100px;
+    justify-content: space-between;
+}
 .main-content {
     flex: 1;
     display: flex;
