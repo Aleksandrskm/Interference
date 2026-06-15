@@ -1,0 +1,242 @@
+/* MonitoringPanel.css */
+
+/* Основные стили для секции */
+.monitoring-section {
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    overflow: auto;
+    height: 90%;
+    width: 100%;
+}
+
+/* Селектор периода */
+.period-selector {
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid black;
+}
+
+.period-title {
+    font-weight: 500;
+    margin-bottom: 12px;
+    font-size: 14px;
+    color: #333;
+}
+
+/* Радио кнопки */
+.radio-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.radio-label-current {
+    margin-bottom: 15px;
+}
+
+.radio-label-custom {
+    margin-top: 15px;
+    margin-bottom: 10px;
+}
+
+/* Блоки периода */
+.period-block {
+    margin-top: 10px;
+    padding: 12px;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.period-block-current {
+    margin-bottom: 15px;
+}
+
+.period-block-custom {
+    margin-top: 10px;
+}
+
+.period-block-active {
+    background-color: #e3f2fd;
+    border: 2px solid #2196f3;
+}
+
+.period-block-inactive {
+    background-color: #fff;
+    border: 1px solid black;
+}
+
+/* Заголовки блоков */
+.block-title {
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 10px;
+    color: #555;
+}
+
+/* Контейнер для инпутов */
+.inputs-container {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Поля ввода */
+.number-input {
+    width: 70px;
+    padding: 6px;
+    border: 1px solid black;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.date-input {
+    padding: 6px;
+    border: 1px solid black;
+    border-radius: 4px;
+    max-width: 150px;
+}
+.headerSection,.lableDefence{
+    font-weight: 500;
+    margin-bottom: 12px;
+    font-size: 16px;
+    color: rgb(51, 51, 51);
+}
+.lableDefence {
+    margin-right: 10px;
+}
+.defaultSelect{
+    max-width: 250px;
+   margin-bottom: 10px;
+}
+.time-input {
+    padding: 6px;
+    border: 1px solid black;
+    border-radius: 4px;
+    max-width: 150px;
+}
+
+/* Контент кастомного периода */
+.custom-content {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.date-time-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.label-min-width {
+    font-weight: 500;
+    min-width: 30px;
+}
+
+/* Ошибки */
+.error-container {
+    padding: 15px;
+    background-color: #ffebee;
+    color: #c62828;
+    border-radius: 4px;
+    margin: 10px 0;
+}
+
+.error-text {
+    font-weight: bold;
+}
+
+.retry-button {
+    margin-top: 10px;
+    padding: 5px 10px;
+    cursor: pointer;
+}
+
+/* Загрузка */
+.loader {
+    padding: 20px;
+    text-align: center;
+    color: #666;
+}
+
+/* Список задач */
+.tasks-container {
+    margin-top: 20px;
+}
+
+.tasks-title {
+    margin: 0 0 15px 0;
+    font-size: 16px;
+    color: #333;
+}
+
+.task-item {
+    padding: 12px;
+    margin: 10px 0;
+    border: 1px solid black;
+    border-radius: 6px;
+    background-color: #fafafa;
+}
+
+.task-id {
+    cursor: pointer;
+    font-weight: bold;
+    color: #2196f3;
+    text-decoration: underline;
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+.task-status {
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* Статусы */
+.status-unknown { color: #9e9e9e; }
+.status-pending { color: #ff9800; }
+.status-progress { color: #2196f3; }
+.status-completed { color: #4caf50; }
+.status-error { color: #f44336; }
+.status-checking { color: #9e9e9e; }
+
+/* Пустое состояние */
+.empty-state {
+    padding: 30px;
+    text-align: center;
+    color: #999;
+    background-color: #fafafa;
+    border-radius: 8px;
+    border: 1px dashed #ddd;
+}
+
+/* Кнопка добавления */
+.add-button {
+    margin-top: 20px;
+    padding: 10px 24px;
+    background-color: #2196f3;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    width: 100%;
+}
+
+.add-button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
