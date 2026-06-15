@@ -2,7 +2,6 @@
 import { Component } from '../core/component.js';
 import { store } from '../core/store.js';
 import dbApi from '../api/dbApi.js';
-import DateTimeRangePanel from './DateTimeRangePanel.js';
 import MonitoringInputs from './MonitoringInputs.js';
 
 class MonitoringPanel extends Component {
@@ -12,6 +11,28 @@ class MonitoringPanel extends Component {
         this.tasks = [];
         this.isLoading = false;
         this.error = null;
+
+        // Режим выбора периода: 'current' (от текущего времени) или 'custom' (заданный период)
+        this.periodMode = 'current';
+
+        // Продолжительность в секундах (по умолчанию 3 минуты = 180 секунд)
+        this.durationHours = 0;
+        this.durationMinutes = 3;
+        this.durationSeconds = 0;
+
+        // Для режима "Заданный период" - начальная и конечная дата/время
+        this.customStartDate = this.getCurrentDateString();
+        this.customStartTime = this.getCurrentTimeString();
+
+        // Конечная дата/время = текущее время + 5 минут
+        const endDateTime = this.addMinutesToDateTime(
+            this.getCurrentDateString(),
+            this.getCurrentTimeString(),
+            5
+        );
+        this.customEndDate = endDateTime.newDate;
+        this.customEndTime = endDateTime.newTime;
+
         this.statusDecryption = {
             '-3': 'Неизвестен',
             '-2': 'Ошибка исполнения',
@@ -23,16 +44,79 @@ class MonitoringPanel extends Component {
         this.contentContainer = null;
         this.addButton = null;
         this.isMounted = false;
-        this.updateInterval = null;
-        this.pendingRequests = new Map(); // Отслеживаем pending запросы
+        this.pendingRequests = new Map();
+    }
+
+    // Получить текущую дату в формате YYYY-MM-DD
+    getCurrentDateString() {
+        const now = new Date();
+        const pad = n => n.toString().padStart(2, '0');
+        return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+    }
+
+    // Получить текущее время в формате HH:MM:SS
+    getCurrentTimeString() {
+        const now = new Date();
+        const pad = n => n.toString().padStart(2, '0');
+        return `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    }
+
+    // Добавить минуты к дате и времени
+    addMinutesToDateTime(dateStr, timeStr, minutesToAdd) {
+        const [year, month, day] = dateStr.split('-').map(Number);
+        const [hours, minutes, seconds] = timeStr.split(':').map(Number);
+
+        const date = new Date(year, month - 1, day, hours, minutes + minutesToAdd, seconds || 0);
+
+        const pad = n => n.toString().padStart(2, '0');
+        const newDate = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+        const newTime = `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+
+        return { newDate, newTime };
     }
 
     formatApiDate(date, time) {
         return `${date}T${time}.000+03`;
     }
 
+    // Получить текущую дату и время в формате для API
+    getCurrentDateTimeForApi() {
+        const now = new Date();
+        const pad = n => n.toString().padStart(2, '0');
+
+        const date = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+        const time = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+
+        return this.formatApiDate(date, time);
+    }
+
+    // Рассчитать конечную дату/время на основе начальной и продолжительности
+    calculateEndDateTime(startDateTimeStr, durationSeconds) {
+        const dateTimeParts = startDateTimeStr.split('T');
+        const datePart = dateTimeParts[0];
+        const timePart = dateTimeParts[1].split('.')[0];
+
+        const [year, month, day] = datePart.split('-').map(Number);
+        const [hours, minutes, seconds] = timePart.split(':').map(Number);
+
+        const startDateTime = new Date(year, month - 1, day, hours, minutes, seconds);
+        const endDateTime = new Date(startDateTime.getTime() + durationSeconds * 1000);
+
+        const pad = n => n.toString().padStart(2, '0');
+        const endDate = `${endDateTime.getFullYear()}-${pad(endDateTime.getMonth() + 1)}-${pad(endDateTime.getDate())}`;
+        const endTime = `${pad(endDateTime.getHours())}:${pad(endDateTime.getMinutes())}:${pad(endDateTime.getSeconds())}`;
+
+        return this.formatApiDate(endDate, endTime);
+    }
+
+    // Получить общую продолжительность в секундах
+    getDurationSeconds() {
+        return (this.durationHours * 3600) + (this.durationMinutes * 60) + this.durationSeconds;
+    }
+
     async addTask() {
         console.log('=== addTask called ===');
+        console.log('Current periodMode:', this.periodMode);
 
         if (this.isLoading) {
             console.log('Already loading, skipping...');
@@ -40,14 +124,7 @@ class MonitoringPanel extends Component {
         }
 
         const state = store.getState();
-        const { startDate, endDate, startTime, endTime } = state.dateRange;
         const { f1, f2, rssId } = state.interference;
-
-        if (!startDate || !endDate || !startTime || !endTime) {
-            this.error = 'Заполните дату и время';
-            this.renderContent();
-            return;
-        }
 
         if (!rssId || rssId <= 0) {
             this.error = 'Укажите корректный ID РСС';
@@ -61,8 +138,45 @@ class MonitoringPanel extends Component {
             return;
         }
 
-        const formattedStartDate = this.formatApiDate(startDate, startTime);
-        const formattedEndDate = this.formatApiDate(endDate, endTime);
+        let formattedStartDate, formattedEndDate;
+
+        if (this.periodMode === 'current') {
+            const durationSeconds = this.getDurationSeconds();
+
+            if (durationSeconds <= 0) {
+                this.error = 'Укажите корректную продолжительность (больше 0 секунд)';
+                this.renderContent();
+                return;
+            }
+
+            formattedStartDate = this.getCurrentDateTimeForApi();
+            formattedEndDate = this.calculateEndDateTime(formattedStartDate, durationSeconds);
+
+            if (!formattedEndDate || formattedEndDate.includes('NaN')) {
+                this.error = 'Ошибка при расчете конечной даты';
+                this.renderContent();
+                return;
+            }
+
+            console.log(`Current mode: start=${formattedStartDate}, end=${formattedEndDate}, duration=${durationSeconds}sec`);
+        } else {
+            if (!this.customStartDate || !this.customStartTime || !this.customEndDate || !this.customEndTime) {
+                this.error = 'Заполните дату и время начала и окончания';
+                this.renderContent();
+                return;
+            }
+
+            formattedStartDate = this.formatApiDate(this.customStartDate, this.customStartTime);
+            formattedEndDate = this.formatApiDate(this.customEndDate, this.customEndTime);
+
+            console.log(`Custom mode: start=${formattedStartDate}, end=${formattedEndDate}`);
+        }
+
+        if (formattedStartDate.includes('NaN') || formattedEndDate.includes('NaN')) {
+            this.error = 'Ошибка формата даты';
+            this.renderContent();
+            return;
+        }
 
         this.isLoading = true;
         this.error = null;
@@ -79,7 +193,7 @@ class MonitoringPanel extends Component {
                 f2: f2
             });
 
-            console.log('📥 Server response:', response);
+            console.log('Server response:', response);
 
             let taskId = null;
             if (typeof response === 'number') {
@@ -96,7 +210,11 @@ class MonitoringPanel extends Component {
                 console.log('Task added. Total:', this.tasks.length);
                 this.renderContent();
 
-                // Получаем статус
+                // Задержка 1.5 секунды перед запросом статуса
+                console.log('Waiting 1.5 seconds before status check...');
+                await new Promise(resolve => setTimeout(resolve, 1500));
+
+                // Делаем один запрос статуса после создания задачи
                 await this.getTaskStatus(taskId);
             } else {
                 throw new Error(`Не получен ID задачи. Ответ: ${JSON.stringify(response)}`);
@@ -115,28 +233,28 @@ class MonitoringPanel extends Component {
     updateButtonState() {
         if (this.addButton) {
             this.addButton.disabled = this.isLoading;
-            this.addButton.textContent = this.isLoading ? ' Отправка...' : ' Создать задачу мониторинга помех';
+            this.addButton.textContent = this.isLoading ? 'Отправка...' : 'Поставить задачу мониторинга помех';
         }
     }
 
-    async getTaskStatus(taskId, isRetry = false) {
-        // Проверяем, не идет ли уже запрос для этой задачи
+    async getTaskStatus(taskId) {
+        // Проверяем, нет ли уже активного запроса для этой задачи
         if (this.pendingRequests.has(taskId)) {
-            console.log(` Request for task ${taskId} already in progress, skipping`);
+            console.log(`Request for task ${taskId} already in progress, skipping`);
             return this.pendingRequests.get(taskId);
         }
 
-        // Создаем Promise с таймаутом
-        const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error(`Timeout for task ${taskId}`)), 10000);
-        });
+        const task = this.tasks.find(t => t.id === taskId);
+        if (task) {
+            task.checking = true;
+            this.renderContent();
+        }
 
         const requestPromise = (async () => {
             try {
-                console.log(`📊 Getting status for task: ${taskId}`);
-
+                console.log(`Getting status for task: ${taskId}`);
                 const response = await dbApi.getStatusRssTask({ task_id: taskId });
-                console.log(`📊 Status response for task ${taskId}:`, response);
+                console.log(`Status response for task ${taskId}:`, response);
 
                 let status = null;
                 if (typeof response === 'number') {
@@ -148,105 +266,385 @@ class MonitoringPanel extends Component {
                     if (typeof status === 'string') status = parseInt(status, 10);
                 }
 
-                console.log(`📊 Task ${taskId} status: ${status} (${this.statusDecryption[status]})`);
+                console.log(`Task ${taskId} status: ${status} (${this.statusDecryption[status]})`);
 
-                // Обновляем задачу
-                const task = this.tasks.find(t => t.id === taskId);
-                if (task) {
-                    task.status = status;
-                    task.checking = false;
+                const currentTask = this.tasks.find(t => t.id === taskId);
+                if (currentTask) {
+                    currentTask.status = status;
                     console.log(`Task ${taskId} updated with status ${status}`);
                     this.renderContent();
                 }
-
                 return status;
             } catch (err) {
                 console.error(`Error getting status for task ${taskId}:`, err);
-
-                // Если ошибка и это не повторная попытка, пробуем еще раз через 2 секунды
-                if (!isRetry) {
-                    console.log(`Will retry task ${taskId} in 2 seconds...`);
-                    setTimeout(() => {
-                        this.getTaskStatus(taskId, true);
-                    }, 2000);
-                } else {
-                    // Если повторная попытка тоже не удалась, отмечаем ошибку
-                    const task = this.tasks.find(t => t.id === taskId);
-                    if (task) {
-                        task.status = -2; // Ошибка
-                        task.checking = false;
-                        this.renderContent();
-                    }
+                const currentTask = this.tasks.find(t => t.id === taskId);
+                if (currentTask) {
+                    currentTask.status = -2;
+                    this.renderContent();
                 }
                 return null;
             } finally {
+                const currentTask = this.tasks.find(t => t.id === taskId);
+                if (currentTask) {
+                    currentTask.checking = false;
+                    this.renderContent();
+                }
                 this.pendingRequests.delete(taskId);
             }
         })();
 
-        // Сохраняем Promise в pendingRequests
-        const racePromise = Promise.race([requestPromise, timeoutPromise]);
-        this.pendingRequests.set(taskId, racePromise);
+        this.pendingRequests.set(taskId, requestPromise);
 
         try {
-            return await racePromise;
+            return await requestPromise;
         } catch (err) {
             console.error(`Request for task ${taskId} failed:`, err);
             this.pendingRequests.delete(taskId);
-
-            // Если таймаут, пробуем еще раз
-            if (err.message.includes('Timeout')) {
-                console.log(`Timeout for task ${taskId}, retrying...`);
-                setTimeout(() => {
-                    this.getTaskStatus(taskId, true);
-                }, 2000);
-            }
             return null;
         }
     }
 
-    // Автоматическая проверка всех задач
-    async checkAllStatuses() {
-        if (!this.isMounted) {
-            console.log('Not mounted, skipping');
-            return;
-        }
-
-        if (this.isLoading) {
-            console.log('Loading in progress, skipping status check');
-            return;
-        }
-
-        if (this.tasks.length === 0) {
-            return;
-        }
-
-        console.log('🔄 Auto-checking statuses for', this.tasks.length, 'tasks');
-
-        for (const task of this.tasks) {
-            // Проверяем только незавершенные задачи и те, которые не проверяются сейчас
-            if (task.status !== 2 && task.status !== -1 && task.status !== -2 && !task.checking) {
-                task.checking = true;
-                await this.getTaskStatus(task.id);
-            }
-        }
-    }
-
     async handleTaskClick(taskId) {
-        console.log(` Manual check for task: ${taskId}`);
-
-        // Находим задачу и отмечаем что проверяем
+        console.log(`Manual check for task: ${taskId}`);
         const task = this.tasks.find(t => t.id === taskId);
-        if (task) {
-            task.checking = true;
-            this.renderContent();
+
+        if (!task) return;
+
+        if (task.checking) {
+            console.log(`Task ${taskId} status check already in progress`);
+            return;
         }
 
         await this.getTaskStatus(taskId);
+    }
 
-        if (task) {
-            task.checking = false;
-            this.renderContent();
+    getStatusClass(status) {
+        if (status === 0) return 'status-pending';
+        if (status === 1) return 'status-progress';
+        if (status === 2) return 'status-completed';
+        if (status === -1 || status === -2) return 'status-error';
+        return 'status-unknown';
+    }
+
+    // Рендер переключателя режимов периода
+    renderPeriodSelector() {
+        const container = this.createElement('div', {
+            className: 'period-selector',
+            style: {
+                marginBottom: '20px',
+                padding: '15px',
+                backgroundColor: '#f8f9fa',
+                borderRadius: '8px',
+                border: '1px solid black'
+            }
+        });
+
+        const title = this.createElement('div', {
+            className: 'period-title',
+            style: {
+                fontWeight: '500',
+                marginBottom: '12px',
+                fontSize: '14px',
+                color: '#333'
+            }
+        }, 'Период мониторинга помех:');
+
+        // Радио кнопка "От текущего времени"
+        const currentRadioLabel = this.createElement('label', {
+            className: 'radio-label radio-label-current',
+            style: {
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                cursor: 'pointer',
+                marginBottom: '15px'
+            }
+        });
+        const currentRadio = this.createElement('input', {
+            type: 'radio',
+            name: 'periodMode',
+            value: 'current',
+            onchange: (e) => {
+                this.periodMode = e.target.value;
+                this.updateBlocksHighlight();
+            }
+        });
+        currentRadio.checked = (this.periodMode === 'current');
+
+        currentRadioLabel.appendChild(currentRadio);
+        currentRadioLabel.appendChild(document.createTextNode(' От текущего времени'));
+
+        // Блок "От текущего времени"
+        const currentBlock = this.createElement('div', {
+            className: `period-block period-block-current ${this.periodMode === 'current' ? 'period-block-active' : 'period-block-inactive'}`,
+            style: {
+                marginTop: '10px',
+                marginBottom: '15px',
+                padding: '12px',
+                borderRadius: '6px',
+                transition: 'all 0.2s'
+            }
+        });
+
+        const currentTitle = this.createElement('div', {
+            className: 'block-title',
+            style: {
+                fontSize: '13px',
+                fontWeight: '500',
+                marginBottom: '10px',
+                color: '#555'
+            }
+        }, 'Продолжительность:');
+
+        const currentInputs = this.createElement('div', {
+            className: 'inputs-container',
+            style: {
+                display: 'flex',
+                gap: '15px',
+                flexWrap: 'wrap'
+            }
+        });
+
+        const hoursWrapper = this.createElement('div', { className: 'input-wrapper', style: { display: 'flex', alignItems: 'center', gap: '8px' } });
+        const hoursInput = this.createElement('input', {
+            type: 'number',
+            min: 0,
+            max: 720,
+            value: this.durationHours,
+            className: 'number-input',
+            style: {
+                width: '70px',
+                padding: '6px',
+                border: '1px solid black',
+                borderRadius: '4px',
+                textAlign: 'center'
+            },
+            onchange: (e) => {
+                this.durationHours = Math.max(0, parseInt(e.target.value) || 0);
+                hoursInput.value = this.durationHours;
+            }
+        });
+        hoursWrapper.appendChild(hoursInput);
+        hoursWrapper.appendChild(document.createTextNode(' часов'));
+
+        const minutesWrapper = this.createElement('div', { className: 'input-wrapper', style: { display: 'flex', alignItems: 'center', gap: '8px' } });
+        const minutesInput = this.createElement('input', {
+            type: 'number',
+            min: 0,
+            max: 59,
+            value: this.durationMinutes,
+            className: 'number-input',
+            style: {
+                width: '70px',
+                padding: '6px',
+                border: '1px solid black',
+                borderRadius: '4px',
+                textAlign: 'center'
+            },
+            onchange: (e) => {
+                this.durationMinutes = Math.min(59, Math.max(0, parseInt(e.target.value) || 0));
+                minutesInput.value = this.durationMinutes;
+            }
+        });
+        minutesWrapper.appendChild(minutesInput);
+        minutesWrapper.appendChild(document.createTextNode(' минут'));
+
+        const secondsWrapper = this.createElement('div', { className: 'input-wrapper', style: { display: 'flex', alignItems: 'center', gap: '8px' } });
+        const secondsInput = this.createElement('input', {
+            type: 'number',
+            min: 0,
+            max: 59,
+            value: this.durationSeconds,
+            className: 'number-input',
+            style: {
+                width: '70px',
+                padding: '6px',
+                border: '1px solid black',
+                borderRadius: '4px',
+                textAlign: 'center'
+            },
+            onchange: (e) => {
+                this.durationSeconds = Math.min(59, Math.max(0, parseInt(e.target.value) || 0));
+                secondsInput.value = this.durationSeconds;
+            }
+        });
+        secondsWrapper.appendChild(secondsInput);
+        secondsWrapper.appendChild(document.createTextNode(' секунд'));
+
+        currentInputs.appendChild(hoursWrapper);
+        currentInputs.appendChild(minutesWrapper);
+        currentInputs.appendChild(secondsWrapper);
+        currentBlock.appendChild(currentTitle);
+        currentBlock.appendChild(currentInputs);
+
+        // Радио кнопка "Заданный период"
+        const customRadioLabel = this.createElement('label', {
+            className: 'radio-label radio-label-custom',
+            style: {
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                cursor: 'pointer',
+                marginTop: '15px',
+                marginBottom: '10px'
+            }
+        });
+        const customRadio = this.createElement('input', {
+            type: 'radio',
+            name: 'periodMode',
+            value: 'custom',
+            onchange: (e) => {
+                this.periodMode = e.target.value;
+                this.updateBlocksHighlight();
+            }
+        });
+        customRadio.checked = (this.periodMode === 'custom');
+
+        customRadioLabel.appendChild(customRadio);
+        customRadioLabel.appendChild(document.createTextNode(' Заданный период'));
+
+        // Блок "Заданный период"
+        const customBlock = this.createElement('div', {
+            className: `period-block period-block-custom ${this.periodMode === 'custom' ? 'period-block-active' : 'period-block-inactive'}`,
+            style: {
+                marginTop: '10px',
+                padding: '12px',
+                borderRadius: '6px',
+                transition: 'all 0.2s'
+            }
+        });
+
+        const customTitle = this.createElement('div', {
+            className: 'block-title',
+            style: {
+                fontSize: '13px',
+                fontWeight: '500',
+                marginBottom: '10px',
+                color: '#555'
+            }
+        }, 'Заданный период:');
+
+        const customContent = this.createElement('div', {
+            className: 'custom-content',
+            style: {
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px'
+            }
+        });
+
+        const fromBlock = this.createElement('div', {
+            className: 'date-time-group',
+            style: {
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                flexWrap: 'wrap'
+            }
+        });
+
+        const fromLabel = this.createElement('span', {
+            className: 'label-min-width',
+            style: { fontWeight: '500', minWidth: '30px' }
+        }, 'С:');
+
+        const fromDateInput = this.createElement('input', {
+            type: 'date',
+            value: this.customStartDate,
+            className: 'date-input',
+            style: { padding: '6px', border: '1px solid black', borderRadius: '4px' },
+            onchange: (e) => { this.customStartDate = e.target.value; }
+        });
+
+        const fromTimeInput = this.createElement('input', {
+            type: 'time',
+            step: '1',
+            value: this.customStartTime,
+            className: 'time-input',
+            style: { padding: '6px', border: '1px solid black', borderRadius: '4px' },
+            onchange: (e) => { this.customStartTime = e.target.value; }
+        });
+
+        fromBlock.appendChild(fromLabel);
+        fromBlock.appendChild(fromDateInput);
+        fromBlock.appendChild(fromTimeInput);
+
+        const toBlock = this.createElement('div', {
+            className: 'date-time-group',
+            style: {
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                flexWrap: 'wrap'
+            }
+        });
+
+        const toLabel = this.createElement('span', {
+            className: 'label-min-width',
+            style: { fontWeight: '500', minWidth: '30px' }
+        }, 'По:');
+
+        const toDateInput = this.createElement('input', {
+            type: 'date',
+            value: this.customEndDate,
+            className: 'date-input',
+            style: { padding: '6px', border: '1px solid black', borderRadius: '4px' },
+            onchange: (e) => { this.customEndDate = e.target.value; }
+        });
+
+        const toTimeInput = this.createElement('input', {
+            type: 'time',
+            step: '1',
+            value: this.customEndTime,
+            className: 'time-input',
+            style: { padding: '6px', border: '1px solid black', borderRadius: '4px' },
+            onchange: (e) => { this.customEndTime = e.target.value; }
+        });
+
+        toBlock.appendChild(toLabel);
+        toBlock.appendChild(toDateInput);
+        toBlock.appendChild(toTimeInput);
+
+        customContent.appendChild(fromBlock);
+        customContent.appendChild(toBlock);
+        customBlock.appendChild(customTitle);
+        customBlock.appendChild(customContent);
+
+        // Собираем все в контейнер
+        container.appendChild(title);
+        container.appendChild(currentRadioLabel);
+        container.appendChild(currentBlock);
+        container.appendChild(customRadioLabel);
+        container.appendChild(customBlock);
+
+        this.currentBlock = currentBlock;
+        this.customBlock = customBlock;
+        this.currentRadio = currentRadio;
+        this.customRadio = customRadio;
+
+        this.updateBlocksHighlight();
+
+        return container;
+    }
+
+    updateBlocksHighlight() {
+        if (this.currentBlock && this.customBlock) {
+            if (this.periodMode === 'current') {
+                this.currentBlock.style.backgroundColor = '#e3f2fd';
+                this.currentBlock.style.border = '2px solid #2196f3';
+                this.customBlock.style.backgroundColor = '#fff';
+                this.customBlock.style.border = '1px solid black';
+            } else {
+                this.customBlock.style.backgroundColor = '#e3f2fd';
+                this.customBlock.style.border = '2px solid #2196f3';
+                this.currentBlock.style.backgroundColor = '#fff';
+                this.currentBlock.style.border = '1px solid black';
+            }
+        }
+
+        if (this.currentRadio && this.customRadio) {
+            this.currentRadio.checked = (this.periodMode === 'current');
+            this.customRadio.checked = (this.periodMode === 'custom');
         }
     }
 
@@ -259,15 +657,19 @@ class MonitoringPanel extends Component {
         this.contentContainer.innerHTML = '';
 
         if (this.error) {
-            const errorDiv = this.createElement('div', { style: {
+            const errorDiv = this.createElement('div', {
+                className: 'error-container',
+                style: {
                     padding: '15px',
                     backgroundColor: '#ffebee',
                     color: '#c62828',
                     borderRadius: '4px',
                     margin: '10px 0'
-                }});
-            errorDiv.innerHTML = `<strong>Ошибка:</strong> ${this.error}`;
+                }
+            });
+            errorDiv.innerHTML = `<span class="error-text" style="font-weight: bold;"> Ошибка:</span> ${this.error}`;
             const retryBtn = this.createElement('button', {
+                className: 'retry-button',
                 style: { marginTop: '10px', padding: '5px 10px', cursor: 'pointer' },
                 onclick: () => {
                     this.error = null;
@@ -280,35 +682,47 @@ class MonitoringPanel extends Component {
         }
 
         if (this.isLoading && this.tasks.length === 0) {
-            const loader = this.createElement('div', { style: {
+            const loader = this.createElement('div', {
+                className: 'loader',
+                style: {
                     padding: '20px',
                     textAlign: 'center',
                     color: '#666'
-                }}, ' Отправка запроса на сервер...');
+                }
+            }, 'Отправка запроса на сервер...');
             this.contentContainer.appendChild(loader);
             return;
         }
 
         if (this.tasks.length > 0) {
-            const container = this.createElement('div');
-
-            const title = this.createElement('h3', { style: {
+            const container = this.createElement('div', {
+                className: 'tasks-container',
+                style: { marginTop: '20px' }
+            });
+            const title = this.createElement('h3', {
+                className: 'tasks-title',
+                style: {
                     margin: '0 0 15px 0',
                     fontSize: '16px',
                     color: '#333'
-                }}, ' Идентификаторы задач:');
+                }
+            }, 'Идентификаторы задач:');
             container.appendChild(title);
 
             this.tasks.forEach(task => {
-                const taskDiv = this.createElement('div', { style: {
+                const taskDiv = this.createElement('div', {
+                    className: 'task-item',
+                    style: {
                         padding: '12px',
                         margin: '10px 0',
-                        border: '1px solid #e0e0e0',
+                        border: '1px solid black',
                         borderRadius: '6px',
                         backgroundColor: '#fafafa'
-                    }});
+                    }
+                });
 
                 const taskIdElem = this.createElement('div', {
+                    className: 'task-id',
                     style: {
                         cursor: 'pointer',
                         fontWeight: 'bold',
@@ -318,13 +732,14 @@ class MonitoringPanel extends Component {
                         marginBottom: '8px'
                     },
                     onclick: () => this.handleTaskClick(task.id)
-                }, ` Задача: ${task.id}`);
+                }, `Задача: ${task.id}`);
 
-                let statusText = ' Загрузка...';
+                let statusText = 'Неизвестно';
                 let statusColor = '#9e9e9e';
 
-                if (task.checking && task.status === null) {
-                    statusText = ' Проверка статуса...';
+                if (task.checking) {
+                    statusText = 'Проверка статуса...';
+                    statusColor = '#9e9e9e';
                 } else if (task.status !== null && task.status !== undefined) {
                     statusText = this.statusDecryption[task.status] || `Код: ${task.status}`;
                     if (task.status === 0) statusColor = '#ff9800';
@@ -334,12 +749,13 @@ class MonitoringPanel extends Component {
                 }
 
                 const statusElem = this.createElement('div', {
+                    className: `task-status ${this.getStatusClass(task.status)}`,
                     style: {
                         fontSize: '13px',
                         color: statusColor,
                         fontWeight: '500'
                     }
-                }, ` Статус: ${statusText}`);
+                }, `Статус: ${statusText}`);
 
                 taskDiv.appendChild(taskIdElem);
                 taskDiv.appendChild(statusElem);
@@ -348,20 +764,25 @@ class MonitoringPanel extends Component {
 
             this.contentContainer.appendChild(container);
         } else if (!this.isLoading) {
-            const emptyDiv = this.createElement('div', { style: {
+            const emptyDiv = this.createElement('div', {
+                className: 'empty-state',
+                style: {
                     padding: '30px',
                     textAlign: 'center',
                     color: '#999',
                     backgroundColor: '#fafafa',
                     borderRadius: '8px',
                     border: '1px dashed #ddd'
-                }}, ' Нет созданных задач. Нажмите кнопку выше, чтобы создать задачу мониторинга.');
+                }
+            }, 'Нет созданных задач. Нажмите кнопку выше, чтобы создать задачу мониторинга.');
             this.contentContainer.appendChild(emptyDiv);
         }
     }
 
     render() {
-        const section = this.createElement('section', { style: {
+        const section = this.createElement('section', {
+            className: 'monitoring-section',
+            style: {
                 padding: '20px',
                 backgroundColor: '#fff',
                 borderRadius: '8px',
@@ -369,32 +790,38 @@ class MonitoringPanel extends Component {
                 overflow: 'auto',
                 height: '90%',
                 width: '100%'
-            }});
+            }
+        });
 
-        const dateTimePanel = new DateTimeRangePanel();
         const monitoringInputs = new MonitoringInputs();
 
-        section.appendChild(dateTimePanel.render());
+        // Сначала добавляем блок с частотами
         section.appendChild(monitoringInputs.render());
 
+        // Затем добавляем блок с выбором периода
+        section.appendChild(this.renderPeriodSelector());
+
         this.addButton = this.createElement('button', {
+            className: 'add-button',
             style: {
                 marginTop: '20px',
                 padding: '10px 24px',
-                backgroundColor: 'rgb(33, 150, 243)',
+                backgroundColor: '#2196f3',
                 color: 'white',
                 border: 'none',
                 borderRadius: '4px',
                 cursor: 'pointer',
                 fontSize: '14px',
-                fontWeight: '500'
+                fontWeight: '500',
+                width: '100%'
             },
             onclick: () => this.addTask()
-        }, ' Создать задачу мониторинга помех');
+        }, 'Поставить задачу мониторинга помех');
 
         section.appendChild(this.addButton);
 
         this.contentContainer = this.createElement('div', {
+            className: 'tasks-container',
             style: { marginTop: '20px' }
         });
         section.appendChild(this.contentContainer);
@@ -410,31 +837,27 @@ class MonitoringPanel extends Component {
     mount() {
         console.log('=== MonitoringPanel MOUNTING ===');
         this.isMounted = true;
-
         this.isLoading = false;
+
+        this.periodMode = 'current';
+
+        setTimeout(() => {
+            if (this.currentRadio && this.customRadio) {
+                this.currentRadio.checked = true;
+                this.customRadio.checked = false;
+            }
+            this.updateBlocksHighlight();
+        }, 100);
+
         this.updateButtonState();
         this.renderContent();
 
-        // Запускаем периодическую проверку статусов (каждые 10 секунд)
-        this.updateInterval = setInterval(() => {
-            this.checkAllStatuses();
-        }, 10000);
-
-        console.log(' MonitoringPanel mounted');
+        console.log('MonitoringPanel mounted, periodMode =', this.periodMode);
     }
 
     unmount() {
         console.log('MonitoringPanel unmounting...');
         this.isMounted = false;
-
-        if (this.updateInterval) {
-            clearInterval(this.updateInterval);
-            this.updateInterval = null;
-        }
-
-        this.isLoading = false;
-
-        // Отменяем все pending запросы
         this.pendingRequests.clear();
     }
 }

@@ -22,7 +22,25 @@ class MonitoringInputs extends Component {
         const f2Input = this.createInput('f2', 'number', this.state.f2, 'Конец полосы частот, МГц. :', (e) => {
             store.setNestedState('interference.f2', Number(e.target.value));
         }, 0.5);
+        const headerSection= document.createElement('div');
+        headerSection.innerText= 'Полоса частот мониторинга:';
+        headerSection.className = 'headerSection';
+        const objDefence = document.createElement('select');
+        const defaultOption = document.createElement('option');
+        defaultOption.value = '';
+        defaultOption.textContent = 'Выберите объект защиты';
+        objDefence.className = 'defaultSelect';
+        const lableDefence = document.createElement('label');
+        lableDefence.innerText= 'Выбор объекта защиты:';
+        lableDefence.className = 'lableDefence';
+        const divDefence = document.createElement('div');
+        divDefence.className = 'divDefence';
+        objDefence.appendChild(defaultOption);
+        divDefence.appendChild(lableDefence)
+        divDefence.appendChild(objDefence)
 
+        section.appendChild(headerSection)
+        section.appendChild(divDefence)
         section.appendChild(rssInput);
         section.appendChild(f1Input);
         section.appendChild(f2Input);
