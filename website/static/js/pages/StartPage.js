@@ -42,9 +42,9 @@ class StartPage extends Component {
     mount() {
         console.log('StartPage mount called');
 
-        store.resetPageData('/interference');  // Обновлено
+        store.resetPageData('/interference');
         super.mount();
-        store.setState({ currentPage: '/interference' });  // Обновлено
+        store.setState({ currentPage: '/interference' });
     }
 
     unmount() {

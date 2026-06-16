@@ -262,8 +262,8 @@ const dbApi = {
     async postSpectrum(body) {
         try {
             const bsonData = SimpleBSON.serialize(body);
-            console.log('📤 Sending BSON data, size:', bsonData.length);
-            console.log('📤 First 20 bytes:', Array.from(bsonData.slice(0, 20)));
+            console.log('Sending BSON data, size:', bsonData.length);
+            console.log('First 20 bytes:', Array.from(bsonData.slice(0, 20)));
 
             const response = await fetch(`${configApi.baseUrl}${DB_ENDPOINTS.SPECTRUM}`, {
                 method: 'POST',
@@ -273,8 +273,8 @@ const dbApi = {
                 body: bsonData
             });
 
-            console.log('📥 Response status:', response.status);
-            console.log('📥 Response headers:', Object.fromEntries(response.headers.entries()));
+            console.log('Response status:', response.status);
+            console.log('Response headers:', Object.fromEntries(response.headers.entries()));
 
             if (!response.ok) {
                 const errorText = await response.text();
@@ -285,25 +285,23 @@ const dbApi = {
             const arrayBuffer = await response.arrayBuffer();
             const uint8Array = new Uint8Array(arrayBuffer);
 
-            console.log('📥 Received data size:', uint8Array.length);
-            console.log('📥 First 20 bytes:', Array.from(uint8Array.slice(0, 20)));
+            console.log('Received data size:', uint8Array.length);
+            console.log('First 20 bytes:', Array.from(uint8Array.slice(0, 20)));
 
-            // Десериализуем из BSON
             const result = SimpleBSON.deserialize(uint8Array);
-            console.log('📊 Parsed spectrum data structure:', Object.keys(result));
-            console.log('📊 Data sample:', result);
+            console.log('Parsed spectrum data structure:', Object.keys(result));
+            console.log('Data sample:', result);
 
-            // Проверяем структуру данных
             if (result.frequencies) {
-                console.log('📊 Frequencies count:', result.frequencies.length);
-                console.log('📊 First 5 freqs:', result.frequencies.slice(0, 5));
+                console.log('Frequencies count:', result.frequencies.length);
+                console.log('First 5 freqs:', result.frequencies.slice(0, 5));
             }
             if (result.amplitudes) {
-                console.log('📊 Amplitudes count:', result.amplitudes.length);
-                console.log('📊 First 5 amps:', result.amplitudes.slice(0, 5));
+                console.log('Amplitudes count:', result.amplitudes.length);
+                console.log('First 5 amps:', result.amplitudes.slice(0, 5));
             }
             if (result.data) {
-                console.log('📊 Data dimensions:', result.data.length, 'x', result.data[0]?.length);
+                console.log('Data dimensions:', result.data.length, 'x', result.data[0]?.length);
             }
 
             return result;
@@ -313,7 +311,6 @@ const dbApi = {
             throw error;
         }
     },
-    // Добавить после метода postSpectrum, но перед export default dbApi
 
     async getSessions(body) {
         try {
@@ -362,6 +359,50 @@ const dbApi = {
             return response.json();
         } catch (error) {
             console.error('Error in getSpectrumById:', error);
+            throw error;
+        }
+    },
+
+    async getUsgList() {
+        try {
+            const response = await fetch(`${configApi.baseUrl}${DB_ENDPOINTS.GET_USG_LIST}`, {
+                method: 'POST',
+                headers: configApi.headers,
+                body: JSON.stringify({})
+            });
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            return response.json();
+        } catch (error) {
+            console.error('Error in getUsgList:', error);
+            throw error;
+        }
+    },
+
+    // Новая функция для получения списка РСС
+    async getRssList() {
+        try {
+            // Используем отдельный URL для этого запроса
+            const url = 'http://185.192.247.60:7130/rss?ist=0';
+            console.log('Fetching RSS list from:', url);
+
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log('RSS list received:', data);
+            return data;
+        } catch (error) {
+            console.error('Error in getRssList:', error);
             throw error;
         }
     }

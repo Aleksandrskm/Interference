@@ -6,7 +6,6 @@ import DateTimeRangePanel from './DateTimeRangePanel.js';
 import Chart from './Chart.js';
 import SpectrumChart from './SpectrumChart.js';
 
-
 class SessionsPanel extends Component {
     constructor() {
         super();
@@ -26,13 +25,24 @@ class SessionsPanel extends Component {
 
         this.chartInstance = null;
 
-        this.dateTimePanel = new DateTimeRangePanel();
-
         // Состояние модальных окон
         this.modalState = {
             spectrumsModal: false,
             detailsModal: false
         };
+
+        // Соответствие ID РСС и наименований
+        this.rssMap = {
+            1: 'Мурманск',
+            2: 'Евпатория',
+            3: 'Новосибирск',
+            4: 'Хабаровск',
+            5: 'Магадан'
+        };
+    }
+
+    getRssName(rssId) {
+        return this.rssMap[rssId] || `РСС ${rssId}`;
     }
 
     formatApiDate(date, time) {
@@ -127,7 +137,6 @@ class SessionsPanel extends Component {
             console.log('Parsed spectrums count:', this.spectrumsList.length);
             this.isLoadingSpectrums = false;
 
-            // Открываем модальное окно со спектрограммами
             this.modalState.spectrumsModal = true;
             this.updateUI();
 
@@ -163,7 +172,6 @@ class SessionsPanel extends Component {
 
             this.isLoadingSpectrum = false;
 
-            // Открываем окно деталей (не закрывая окно спектрограмм полностью)
             this.modalState.detailsModal = true;
             this.updateUI();
 
@@ -223,7 +231,6 @@ class SessionsPanel extends Component {
         this.updateUI();
     }
 
-    // Закрыть окно спектрограмм и вернуться к списку задач
     closeSpectrumsModal() {
         this.modalState.spectrumsModal = false;
         this.modalState.detailsModal = false;
@@ -235,7 +242,6 @@ class SessionsPanel extends Component {
         this.updateUI();
     }
 
-    // Закрыть окно деталей - просто закрываем detailsModal, spectrumsModal остается открытым
     closeDetailsModal() {
         this.modalState.detailsModal = false;
         this.selectedSpectrum = null;
@@ -283,21 +289,12 @@ class SessionsPanel extends Component {
     hasNoisesInSession(session) {
         if (session.spectrum_w_noises_cnt > 0) return true;
         if (session.channels_w_noises > 0) return true;
-        if (session.noises_cnt > 0) return true;
         return false;
     }
 
     hasNoisesInSpectrum(spectrum) {
+        // Проверяем поле channels_w_noises (без _cnt)
         if (spectrum.channels_w_noises > 0) return true;
-        if (spectrum.noises_cnt > 0) return true;
-
-        if (spectrum.noises && Array.isArray(spectrum.noises)) {
-            const realNoises = spectrum.noises.filter(noise => {
-                return noise.max !== 0 || noise.f1 !== 0 || noise.f2 !== 0;
-            });
-            if (realNoises.length > 0) return true;
-        }
-
         return false;
     }
 
@@ -312,13 +309,11 @@ class SessionsPanel extends Component {
         return data.useful_signals || data.channels || [];
     }
 
-    // Рендер модального окна для спектрограмм
     renderSpectrumsModal() {
         const overlay = this.createElement('div', { className: 'modal-overlay' });
 
         const modal = this.createElement('div', { className: 'modal-content spectrums-modal' });
 
-        // Заголовок
         const modalHeader = this.createElement('div', { className: 'modal-header' });
 
         const backBtn = this.createElement('button', {
@@ -327,8 +322,42 @@ class SessionsPanel extends Component {
         });
         backBtn.innerHTML = '← Назад к задачам';
 
-        const title = this.createElement('h3', { className: 'modal-title' },
-            `Список спектрограмм: Задача: ${this.selectedSession?.id}`);
+        const headerCenter = this.createElement('div', { className: 'modal-header-center' });
+
+        const title = this.createElement('h3', { className: 'modal-title' }, 'Список спектрограмм');
+        headerCenter.appendChild(title);
+
+        if (this.selectedSession) {
+            const taskInfo = this.createElement('div', { className: 'task-info' });
+
+            const taskIdSpan = this.createElement('span', {}, `Задача: ${this.selectedSession.id}`);
+            taskInfo.appendChild(taskIdSpan);
+
+            if (this.selectedSession.rss_id) {
+                const sep3 = this.createElement('span', { className: 'separator' }, '|');
+                taskInfo.appendChild(sep3);
+
+                const rssName = this.getRssName(this.selectedSession.rss_id);
+                const rssSpan = this.createElement('span', { className: 'rss-info' }, `Пост мониторинга: ${rssName}`);
+                taskInfo.appendChild(rssSpan);
+            }
+            const sep1 = this.createElement('span', { className: 'separator' }, '|');
+            taskInfo.appendChild(sep1);
+
+            const dateSpan = this.createElement('span', {}, `Дата завершения: ${this.formatDateTime(this.selectedSession.dt_to)}`);
+            taskInfo.appendChild(dateSpan);
+
+            const sep2 = this.createElement('span', { className: 'separator' }, '|');
+            taskInfo.appendChild(sep2);
+
+            const countSpan = this.createElement('span', {}, `Всего спектрограмм: ${this.spectrumsList.length}`);
+            taskInfo.appendChild(countSpan);
+
+            // Добавляем информацию о РСС (пост мониторинга)
+
+
+            headerCenter.appendChild(taskInfo);
+        }
 
         const closeBtn = this.createElement('button', {
             className: 'modal-close-btn',
@@ -337,10 +366,9 @@ class SessionsPanel extends Component {
         closeBtn.innerHTML = '×';
 
         modalHeader.appendChild(backBtn);
-        modalHeader.appendChild(title);
+        modalHeader.appendChild(headerCenter);
         modalHeader.appendChild(closeBtn);
 
-        // Тело
         const modalBody = this.createElement('div', { className: 'modal-body' });
 
         if (this.isLoadingSpectrums) {
@@ -356,7 +384,6 @@ class SessionsPanel extends Component {
         modal.appendChild(modalBody);
         overlay.appendChild(modal);
 
-        // Закрытие по клику на overlay
         overlay.addEventListener('click', (e) => {
             if (e.target === overlay) {
                 this.closeSpectrumsModal();
@@ -389,8 +416,9 @@ class SessionsPanel extends Component {
                 onclick: () => this.onSpectrumClick(spectrum)
             });
 
+            // Используем правильные имена полей без "_cnt"
             const cells = [
-                spectrum.id,
+                spectrum.id || '—',
                 this.formatDateTime(spectrum.dt),
                 spectrum.channels_w_noises || 0,
                 spectrum.channels_wo_noises || 0,
@@ -409,13 +437,11 @@ class SessionsPanel extends Component {
         return table;
     }
 
-    // Рендер модального окна для деталей спектрограммы (поверх окна спектрограмм)
     renderDetailsModal() {
         const overlay = this.createElement('div', { className: 'modal-overlay details-overlay' });
 
         const modal = this.createElement('div', { className: 'modal-content details-modal' });
 
-        // Заголовок с кнопкой "Назад к спектрограммам"
         const modalHeader = this.createElement('div', { className: 'modal-header' });
 
         const backBtn = this.createElement('button', {
@@ -425,8 +451,7 @@ class SessionsPanel extends Component {
         backBtn.innerHTML = '← Назад к спектрограммам';
 
         const title = this.createElement('h3', { className: 'modal-title' },
-            `Задача: ${this.selectedSession?.id} 
-            Спектрограмма: ${this.selectedSpectrum?.id}`);
+            `Задача: ${this.selectedSession?.id} | Спектрограмма: ${this.selectedSpectrum?.id}`);
 
         const closeBtn = this.createElement('button', {
             className: 'modal-close-btn',
@@ -438,7 +463,6 @@ class SessionsPanel extends Component {
         modalHeader.appendChild(title);
         modalHeader.appendChild(closeBtn);
 
-        // Тело
         const modalBody = this.createElement('div', { className: 'modal-body' });
 
         if (this.isLoadingSpectrum) {
@@ -453,7 +477,6 @@ class SessionsPanel extends Component {
         modal.appendChild(modalBody);
         overlay.appendChild(modal);
 
-        // Закрытие по клику на overlay
         overlay.addEventListener('click', (e) => {
             if (e.target === overlay) {
                 this.closeDetailsModal();
@@ -470,40 +493,38 @@ class SessionsPanel extends Component {
 
         const container = this.createElement('div', { className: 'spectrum-details' });
 
-        // Таблица с основной информацией
         const infoTable = this.createElement('table', { className: 'spectrum-details-table' });
         const infoRows = [
             { label: 'Начало полосы (f1):', value: `${this.formatNumber(data.f1)} МГц` },
             { label: 'Конец полосы (f2):', value: `${this.formatNumber(data.f2)} МГц` },
             { label: 'Уровень шума:', value: `${this.formatNumber(data.noise_level)} дБ` },
-            { label: 'Порог обнаружения:', value: `${this.formatNumber(data.threshold)} дБ` }
+            { label: 'Порог обнаружения:', value: `${this.formatNumber(data.threshold)} дБ` },
+            { label: 'Количество полезных сигналов под помехами:', value: data.channels_w_noises ?? 0 }
         ];
 
         infoRows.forEach(row => {
             const tr = this.createElement('tr');
             const tdLabel = this.createElement('td', {}, row.label);
-            const tdValue = this.createElement('td', {}, row.value);
+            const tdValue = this.createElement('td', {}, String(row.value));
             tr.appendChild(tdLabel);
             tr.appendChild(tdValue);
             infoTable.appendChild(tr);
         });
         container.appendChild(infoTable);
 
-        // График
         const chartSection = this.createElement('div', { className: 'chart-section' });
         const chartTitle = this.createElement('h4', {}, 'Спектрограмма');
         const chartContainer = this.createElement('div', {
             className: 'spectrum-chart-container',
-            style: {  width: '100%' }
+            style: { width: '100%' }
         });
         chartSection.appendChild(chartTitle);
         chartSection.appendChild(chartContainer);
         container.appendChild(chartSection);
 
-        // Полезные сигналы
         if (usefulSignals && usefulSignals.length > 0) {
             const signalsSection = this.createElement('div', { className: 'signals-section' });
-            const signalsTitle = this.createElement('h5', {}, `Полезные сигналы (${usefulSignals.length})`);
+            const signalsTitle = this.createElement('h5', {}, `Маски полезных сигналов (${usefulSignals.length})`);
             signalsSection.appendChild(signalsTitle);
 
             const signalsTable = this.createElement('table', { className: 'signals-table' });
@@ -532,7 +553,6 @@ class SessionsPanel extends Component {
             container.appendChild(signalsSection);
         }
 
-        // Помехи
         if (realNoises && realNoises.length > 0) {
             const noisesSection = this.createElement('div', { className: 'noises-section' });
             const noisesTitle = this.createElement('h5', {}, `Помехи (${realNoises.length})`);
@@ -587,7 +607,21 @@ class SessionsPanel extends Component {
         const thead = this.createElement('thead');
         const headerRow = this.createElement('tr');
 
-        const headers = ['ID', 'Начало', 'Конец', 'f1 (МГц)', 'f2 (МГц)', 'Измерений', 'С помехами', 'Без помех', 'Каналов', 'Подавлено'];
+        const headers = [
+            'ID',
+            'РСС',
+            'Начало',
+            'Конец',
+            'f1 (МГц)',
+            'f2 (МГц)',
+            'Объект',
+            'Устройство',
+            'Измерений',
+            'С помехами',
+            'Без помех',
+            'Каналов',
+            'Подавлено'
+        ];
 
         headers.forEach(headerText => {
             const th = this.createElement('th', {}, headerText);
@@ -607,11 +641,14 @@ class SessionsPanel extends Component {
             });
 
             const cells = [
-                session.id,
+                session.id || '—',
+                session.rss_id || '—',
                 this.formatDateTime(session.dt_from),
                 this.formatDateTime(session.dt_to),
                 this.formatNumber(session.f1),
                 this.formatNumber(session.f2),
+                session.usg || '—',
+                session.device || '—',
                 session.spectrum_cnt || 0,
                 session.spectrum_w_noises_cnt || 0,
                 session.spectrum_wo_noises_cnt || 0,
@@ -635,29 +672,22 @@ class SessionsPanel extends Component {
         const mainContainer = this.element?.querySelector('.sessions-main-container');
         if (!mainContainer) return;
 
-        // Очищаем основной контейнер
         while (mainContainer.firstChild) {
             mainContainer.removeChild(mainContainer.firstChild);
         }
 
-        // Если открыто окно деталей - показываем его поверх
         if (this.modalState.detailsModal) {
             const modal = this.renderDetailsModal();
             mainContainer.appendChild(modal);
-        }
-        // Если открыто окно спектрограмм (и нет деталей) - показываем его
-        else if (this.modalState.spectrumsModal) {
+        } else if (this.modalState.spectrumsModal) {
             const modal = this.renderSpectrumsModal();
             mainContainer.appendChild(modal);
-        }
-        // Иначе показываем список задач
-        else {
+        } else {
             const sessionsContainer = this.createElement('div', { className: 'sessions-list-container' });
             sessionsContainer.appendChild(this.renderSessionsList());
             mainContainer.appendChild(sessionsContainer);
         }
 
-        // Если есть график и он должен отображаться, создаем его
         if (this.modalState.detailsModal && this.currentSpectrumData) {
             setTimeout(() => {
                 this.createChart();
@@ -670,20 +700,21 @@ class SessionsPanel extends Component {
 
         const title = this.createElement('h2', {}, 'Результаты задач');
         container.appendChild(title);
+
         const containerBtns = this.createElement('div', { className: 'contaoner-btn' });
 
-        const datePanel = this.dateTimePanel.render();
+        const dateTimePanel = new DateTimeRangePanel();
+        const datePanel = dateTimePanel.render();
         datePanel.style.marginBottom = '15px';
-        // container.appendChild(datePanel);
         containerBtns.appendChild(datePanel);
+
         const loadButton = this.createElement('button', {
             className: 'load-sessions-btn',
             onclick: () => this.loadSessions(),
         }, this.isLoadingSessions ? 'Загрузка...' : 'Загрузить задачи');
-        // container.appendChild(loadButton);
         containerBtns.appendChild(loadButton);
         container.appendChild(containerBtns);
-        // Основной контейнер для содержимого и модальных окон
+
         this.mainContainer = this.createElement('div', { className: 'sessions-main-container' });
         container.appendChild(this.mainContainer);
 
@@ -705,12 +736,12 @@ class SessionsPanel extends Component {
     mount() {
         console.log('SessionsPanel mounted');
 
-        // Добавляем стили для модальных окон, если их нет
         this.addModalStyles();
 
         if (window.app?.store) {
             this.unsubscribe = window.app.store.subscribe((state) => this.onStoreUpdate(state));
         }
+
         setTimeout(() => {
             this.loadSessions();
         }, 100);
@@ -722,7 +753,6 @@ class SessionsPanel extends Component {
         const style = document.createElement('style');
         style.id = 'sessions-modal-styles';
         style.textContent = `
-            /* Модальные окна */
             .modal-overlay {
                 position: fixed;
                 top: 0;
@@ -768,6 +798,43 @@ class SessionsPanel extends Component {
                 border-bottom: 1px solid #e0e0e0;
                 background-color: #f8f9fa;
                 flex-shrink: 0;
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+            
+            .modal-header-center {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                flex: 1;
+                text-align: center;
+            }
+            
+            .modal-header-center .modal-title {
+                margin: 0 0 4px 0;
+                font-size: 20px;
+                font-weight: 700;
+                color: #333;
+            }
+            
+            .task-info {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                flex-wrap: wrap;
+                justify-content: center;
+                font-size: 13px;
+                color: #333;
+            }
+            
+            .task-info .separator {
+                color: #999;
+                font-weight: 300;
+            }
+            
+            .task-info .rss-info {
+                font-weight: 500;
+                color: #333;
             }
             
             .modal-back-btn {
@@ -782,6 +849,7 @@ class SessionsPanel extends Component {
                 align-items: center;
                 gap: 8px;
                 transition: all 0.2s;
+                flex-shrink: 0;
             }
             
             .modal-back-btn:hover {
@@ -803,6 +871,7 @@ class SessionsPanel extends Component {
                 color: #999;
                 padding: 0 8px;
                 transition: color 0.2s;
+                flex-shrink: 0;
             }
             
             .modal-close-btn:hover {
@@ -851,6 +920,11 @@ class SessionsPanel extends Component {
                 
                 .modal-title {
                     font-size: 14px;
+                }
+                
+                .task-info {
+                    font-size: 12px;
+                    gap: 6px;
                 }
                 
                 .modal-body {

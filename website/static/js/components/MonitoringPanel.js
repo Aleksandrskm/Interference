@@ -35,11 +35,11 @@ class MonitoringPanel extends Component {
 
         this.statusDecryption = {
             '-3': 'Неизвестен',
-            '-2': 'Ошибка исполнения',
+            '-2': 'Ошибка запуска задачи',
             '-1': 'Отменена',
             '0': 'Ожидает выполнения',
-            '1': 'В процессе',
-            '2': 'Выполнена'
+            '1': 'Ведение мониторинга',
+            '2': 'Выполнена успешно'
         };
         this.contentContainer = null;
         this.addButton = null;
@@ -114,6 +114,11 @@ class MonitoringPanel extends Component {
         return (this.durationHours * 3600) + (this.durationMinutes * 60) + this.durationSeconds;
     }
 
+
+    // components/MonitoringPanel.js - обновленный метод addTask()
+
+    // components/MonitoringPanel.js - обновленный метод addTask()
+
     async addTask() {
         console.log('=== addTask called ===');
         console.log('Current periodMode:', this.periodMode);
@@ -124,7 +129,16 @@ class MonitoringPanel extends Component {
         }
 
         const state = store.getState();
-        const { f1, f2, rssId } = state.interference;
+        const { f1, f2, rssId, usgId } = state.interference;
+
+        console.log('State from store:', { f1, f2, rssId, usgId });
+
+        // Проверка: выбран ли объект защиты
+        if (!usgId || usgId <= 0) {
+            this.error = 'Выберите объект защиты';
+            this.renderContent();
+            return;
+        }
 
         if (!rssId || rssId <= 0) {
             this.error = 'Укажите корректный ID РСС';
@@ -184,14 +198,19 @@ class MonitoringPanel extends Component {
         this.renderContent();
 
         try {
-            console.log('Sending request to create task...');
-            const response = await dbApi.getNewRssTask({
-                rss_id: rssId,
+            // Создаем объект запроса
+            const requestBody = {
+                rss_id: Number(rssId),
                 dt1: formattedStartDate,
                 dt2: formattedEndDate,
-                f1: f1,
-                f2: f2
-            });
+                f1: Number(f1),
+                f2: Number(f2),
+                usg_id: Number(usgId) // Теперь usg_id обязателен
+            };
+
+            console.log('Sending request to create task...', requestBody);
+
+            const response = await dbApi.getNewRssTask(requestBody);
 
             console.log('Server response:', response);
 
@@ -210,11 +229,9 @@ class MonitoringPanel extends Component {
                 console.log('Task added. Total:', this.tasks.length);
                 this.renderContent();
 
-                // Задержка 1.5 секунды перед запросом статуса
                 console.log('Waiting 1.5 seconds before status check...');
                 await new Promise(resolve => setTimeout(resolve, 1500));
 
-                // Делаем один запрос статуса после создания задачи
                 await this.getTaskStatus(taskId);
             } else {
                 throw new Error(`Не получен ID задачи. Ответ: ${JSON.stringify(response)}`);
@@ -341,12 +358,12 @@ class MonitoringPanel extends Component {
 
         const title = this.createElement('div', {
             className: 'period-title',
-            style: {
-                fontWeight: '500',
-                marginBottom: '12px',
-                fontSize: '14px',
-                color: '#333'
-            }
+            // style: {
+            //     fontWeight: '500',
+            //     marginBottom: '12px',
+            //     fontSize: '14px',
+            //     color: '#333'
+            // }
         }, 'Период мониторинга помех:');
 
         // Радио кнопка "От текущего времени"
@@ -668,15 +685,15 @@ class MonitoringPanel extends Component {
                 }
             });
             errorDiv.innerHTML = `<span class="error-text" style="font-weight: bold;"> Ошибка:</span> ${this.error}`;
-            const retryBtn = this.createElement('button', {
-                className: 'retry-button',
-                style: { marginTop: '10px', padding: '5px 10px', cursor: 'pointer' },
-                onclick: () => {
-                    this.error = null;
-                    this.addTask();
-                }
-            }, 'Повторить');
-            errorDiv.appendChild(retryBtn);
+            // const retryBtn = this.createElement('button', {
+            //     className: 'retry-button',
+            //     style: { marginTop: '10px', padding: '5px 10px', cursor: 'pointer' },
+            //     onclick: () => {
+            //         this.error = null;
+            //         this.addTask();
+            //     }
+            // }, 'Повторить');
+            // errorDiv.appendChild(retryBtn);
             this.contentContainer.appendChild(errorDiv);
             return;
         }
