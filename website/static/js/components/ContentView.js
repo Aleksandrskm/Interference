@@ -11,12 +11,12 @@ class ContentView extends Component {
 
     render() {
         const section = this.createElement('section', { className: 'content-view' });
-        const h2= document.createElement('h2');
-        h2.className='h2-hearder'
-        h2.innerText='Текущая помеховая обстановка';
-        const dateTimePanel = new DateTimeRangePanel();
+        const h2 = document.createElement('h2');
+        h2.className = 'h2-hearder';
+        h2.innerText = 'Текущая помеховая обстановка';
 
-        // Создаем экземпляр MapComponent
+        // СОЗДАЕМ НОВЫЙ ЭКЗЕМПЛЯР ПРИ КАЖДОМ РЕНДЕРЕ
+        const dateTimePanel = new DateTimeRangePanel();
         this.mapComponent = new MapComponent();
 
         const wrapper = this.createElement('div', { className: 'date-time-wrapper' });
@@ -43,12 +43,11 @@ class ContentView extends Component {
                 console.log('Map cleared');
             }
         });
+
         section.appendChild(h2);
         wrapper.appendChild(clearBtn);
-
         section.appendChild(wrapper);
 
-        // Добавляем карту (рендерим)
         const mapElement = this.mapComponent.render();
         section.appendChild(mapElement);
 
@@ -59,36 +58,12 @@ class ContentView extends Component {
     mount() {
         console.log('ContentView mounting...');
 
-        // ВАЖНО: вызываем mount для mapComponent
         if (this.mapComponent && this.mapComponent.mount) {
             console.log('Calling MapComponent.mount()');
             this.mapComponent.mount();
         } else {
             console.error('MapComponent or mount method not found!');
         }
-
-        // Добавляем тестовые фигуры через 1.5 секунды после загрузки
-        setTimeout(() => {
-            if (this.mapComponent && this.mapComponent.map) {
-                console.log('Adding test shapes...');
-
-                // Тестовый прямоугольник (Москва)
-                // this.mapComponent.drawRectangle(55.5, 37.2, 56.0, 37.8, '#ff0000');
-                //
-                // // Тестовая точка (Москва)
-                // this.mapComponent.addPoint(37.6173, 55.7558, '#00ff00');
-                //
-                // // Тестовая точка (Санкт-Петербург)
-                // this.mapComponent.addPoint(30.3159, 59.9386, '#ff9900');
-
-                console.log('Test shapes added');
-            } else {
-                console.warn('Map component not ready for test shapes');
-                if (this.mapComponent) {
-                    console.log('MapComponent exists but map property is:', this.mapComponent.map);
-                }
-            }
-        }, 1500);
     }
 
     unmount() {

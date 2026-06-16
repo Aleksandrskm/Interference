@@ -17,7 +17,11 @@ class SidePanel extends Component {
         this.dataContentComponent = null; // Добавляем ссылку на DataContent
     }
 
+    // components/SidePanel.js - обновленный метод loadData()
+    // components/SidePanel.js - метод loadData()
     async loadData(force = false) {
+        // Убираем store.refreshDateRange() отсюда
+
         const state = store.getState();
         const { startDate, endDate, startTime, endTime } = state.dateRange;
 
@@ -37,11 +41,14 @@ class SidePanel extends Component {
         this.isLoading = true;
         this.error = null;
 
-        // Обновляем UI
         this.renderContent();
 
         try {
-            console.log('Loading data with params:', { dt_from: formattedStartDate, dt_to: formattedEndDate });
+            console.log('Loading data with dates:', {
+                dt_from: formattedStartDate,
+                dt_to: formattedEndDate
+            });
+
             const response = await dbApi.situation({
                 dt_from: formattedStartDate,
                 dt_to: formattedEndDate
@@ -51,10 +58,8 @@ class SidePanel extends Component {
             this.data = response;
             this.isLoading = false;
 
-            // Обновляем store
             store.setState({ dashboard: { data: response, isLoading: false, error: null } });
 
-            // Обновляем UI
             this.renderContent();
         } catch (err) {
             console.error('Load error:', err);

@@ -183,11 +183,11 @@
 
 /* Цветовые классы для строк */
 .row-noises {
-    background-color: rgb(239, 74, 74); /* красный - есть помехи */
+    background-color: #ec8984; /* красный - есть помехи */
 }
 
 .row-clean {
-    background-color: #4aed4a; /* зеленый - нет помех */
+    background-color: #a8d18b; /* зеленый - нет помех */
 }
 
 .row-selected {
@@ -270,11 +270,11 @@
 }
 
 .signals-table tr {
-    background-color: #4aed4a;
+    background-color: #a8d18b;
 }
 
 .noises-table tr {
-    background-color: rgb(239, 74, 74);
+    background-color: #ec8984;
 }
 
 .scrollable-table {
@@ -448,4 +448,12 @@
 .spectrum-details-container::-webkit-scrollbar-thumb:hover,
 .scrollable-table::-webkit-scrollbar-thumb:hover {
     background: #999;
+}
+.modal-title{
+    font-size: 20px;
+}
+.task-info span{
+    font-size: 16px;
+    font-weight: 600;
+    color: black;
 }

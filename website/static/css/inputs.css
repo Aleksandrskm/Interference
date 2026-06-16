@@ -9,7 +9,13 @@
     font-weight: 600;
     color: var(--text-primary);
 }
-
+.labelDefence{
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-right: 10px;
+}
 .input {
     width: 100%;
     padding: 10px 14px;
@@ -37,7 +43,7 @@
     border-radius: 8px;
 }
 #rss-id,#f1,#f2{
-    max-width:150px ;
+    max-width:250px ;
 }
 /* Чекбоксы и радио */
 .checkbox-wrapper,
@@ -72,7 +78,7 @@
         margin-bottom: 16px;
     }
 
-    .input-label {
+    .input-label,.labelDefence {
         font-size: 0.9rem;
         margin-bottom: 6px;
     }
@@ -93,7 +99,7 @@
         margin-bottom: 14px;
     }
 
-    .input-label {
+    .input-label,.labelDefence {
         font-size: 0.9rem;
         margin-bottom: 6px;
     }
@@ -127,7 +133,7 @@
         margin-bottom: 12px;
     }
 
-    .input-label {
+    .input-label,.labelDefence {
         font-size: 0.85rem;
         margin-bottom: 5px;
     }
@@ -163,7 +169,7 @@
 
 /* Очень маленькие */
 @media (max-width: 320px) {
-    .input-label {
+    .input-label,.labelDefence {
         font-size: 0.8rem;
     }
 

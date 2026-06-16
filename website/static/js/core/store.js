@@ -30,7 +30,8 @@ class Store {
             interference: {
                 f1: 920,
                 f2: 930.5,
-                rssId: 1
+                rssId: 2,
+                usgId: null
             },
             spectrumParams: {
                 fr1: 2100,
@@ -38,7 +39,6 @@ class Store {
                 averages: 2,
                 gain: 5
             },
-            // НОВЫЕ СОСТОЯНИЯ ДЛЯ СТРАНИЦЫ СЕССИЙ
             sessions: {
                 data: null,
                 isLoading: false,
@@ -65,14 +65,18 @@ class Store {
 
     initDateRange() {
         const now = new Date();
-        const pastDate = new Date(now);
-        pastDate.setFullYear(pastDate.getFullYear() - 1);
+
+        const startDate = new Date(now);
+        startDate.setDate(startDate.getDate() - 1);
+
+        const endDate = new Date(now);
+        endDate.setDate(endDate.getDate() + 1);
 
         this.state.dateRange = {
-            startDate: this.getDateForInput(pastDate),
-            endDate: this.getDateForInput(now),
-            startTime: this.getTimeForInput(pastDate),
-            endTime: this.getTimeForInput(now)
+            startDate: this.getDateForInput(startDate),
+            endDate: this.getDateForInput(endDate),
+            startTime: this.getTimeForInput(startDate),
+            endTime: this.getTimeForInput(endDate)
         };
     }
 
@@ -106,7 +110,6 @@ class Store {
         this.notify();
     }
 
-    // Сброс данных для конкретной страницы
     resetPageData(page) {
         switch(page) {
             case '/':
@@ -130,7 +133,7 @@ class Store {
                     }
                 });
                 break;
-            case '/interference':  // Обновленный путь
+            case '/interference':
                 this.setState({
                     dashboard: {
                         data: null,

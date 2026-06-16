@@ -106,17 +106,21 @@
     border-radius: 4px;
     max-width: 150px;
 }
-.headerSection,.lableDefence{
-    font-weight: 500;
+.headerSection{
+    font-weight: 700;
     margin-bottom: 12px;
-    font-size: 16px;
+    font-size: 20px;
     color: rgb(51, 51, 51);
 }
-.lableDefence {
-    margin-right: 10px;
+.period-title{
+    font-weight: 700;
+    margin-bottom: 12px;
+    font-size: 20px;
+    color: rgb(51, 51, 51);
 }
+
 .defaultSelect{
-    max-width: 250px;
+    max-width: 400px;
    margin-bottom: 10px;
 }
 .time-input {

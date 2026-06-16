@@ -41,10 +41,10 @@ class SessionsPages extends Component {
         // Устанавливаем текущую страницу
         store.setState({ currentPage: '/' });
 
-        // Сбрасываем данные при монтировании страницы
+        // Сбрасываем данные
         store.resetPageData('/');
 
-        // Монтируем всех детей
+        // Монтируем детей
         super.mount();
     }
 
