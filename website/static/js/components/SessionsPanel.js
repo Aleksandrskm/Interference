@@ -5,6 +5,7 @@ import dbApi from '../api/dbApi.js';
 import DateTimeRangePanel from './DateTimeRangePanel.js';
 import Chart from './Chart.js';
 import SpectrumChart from './SpectrumChart.js';
+import { dbmToDbMkvM, dbMkvMToDbm, dbmArrayToDbMkvM, dbMkvMArrayToDbm } from '../utils/unitConverters.js';
 
 class SessionsPanel extends Component {
     constructor() {
@@ -208,6 +209,7 @@ class SessionsPanel extends Component {
             data: spectrumData,
             f1MHz: f1,
             f2MHz: f2,
+            threshold: this.currentSpectrumData.threshold,
             usefulSignals: this.getUsefulSignals(this.currentSpectrumData),
             noises: this.getRealNoises(this.currentSpectrumData.noises)
         };
@@ -286,6 +288,19 @@ class SessionsPanel extends Component {
         return num.toFixed(decimals);
     }
 
+    /**
+     * Конвертирует значение из dBm в dB(мкВ/м) с учетом частоты
+     */
+    convertDbmToDbMkvM(dbm, freqMhz) {
+        if (dbm === undefined || dbm === null || isNaN(dbm)) return '';
+        if (freqMhz === undefined || freqMhz === null || isNaN(freqMhz) || freqMhz === 0) return '';
+        try {
+            return dbmToDbMkvM(dbm, freqMhz);
+        } catch (e) {
+            return '';
+        }
+    }
+
     hasNoisesInSession(session) {
         if (session.spectrum_w_noises_cnt > 0) return true;
         if (session.channels_w_noises > 0) return true;
@@ -293,7 +308,6 @@ class SessionsPanel extends Component {
     }
 
     hasNoisesInSpectrum(spectrum) {
-        // Проверяем поле channels_w_noises (без _cnt)
         if (spectrum.channels_w_noises > 0) return true;
         return false;
     }
@@ -341,6 +355,14 @@ class SessionsPanel extends Component {
                 const rssSpan = this.createElement('span', { className: 'rss-info' }, `Пост мониторинга: ${rssName}`);
                 taskInfo.appendChild(rssSpan);
             }
+
+            if (this.selectedSession.usg) {
+                const sep4 = this.createElement('span', { className: 'separator' }, '|');
+                taskInfo.appendChild(sep4);
+                const usgSpan = this.createElement('span', {}, `Объект защиты: ${this.selectedSession.usg}`);
+                taskInfo.appendChild(usgSpan);
+            }
+
             const sep1 = this.createElement('span', { className: 'separator' }, '|');
             taskInfo.appendChild(sep1);
 
@@ -352,9 +374,6 @@ class SessionsPanel extends Component {
 
             const countSpan = this.createElement('span', {}, `Всего спектрограмм: ${this.spectrumsList.length}`);
             taskInfo.appendChild(countSpan);
-
-            // Добавляем информацию о РСС (пост мониторинга)
-
 
             headerCenter.appendChild(taskInfo);
         }
@@ -416,7 +435,6 @@ class SessionsPanel extends Component {
                 onclick: () => this.onSpectrumClick(spectrum)
             });
 
-            // Используем правильные имена полей без "_cnt"
             const cells = [
                 spectrum.id || '—',
                 this.formatDateTime(spectrum.dt),
@@ -497,8 +515,8 @@ class SessionsPanel extends Component {
         const infoRows = [
             { label: 'Начало полосы (f1):', value: `${this.formatNumber(data.f1)} МГц` },
             { label: 'Конец полосы (f2):', value: `${this.formatNumber(data.f2)} МГц` },
-            { label: 'Уровень шума:', value: `${this.formatNumber(data.noise_level)} дБ` },
-            { label: 'Порог обнаружения:', value: `${this.formatNumber(data.threshold)} дБ` },
+            { label: 'Уровень шума:', value: `${this.formatNumber(data.noise_level)} дБм` },
+            { label: 'Порог обнаружения:', value: `${this.formatNumber(data.threshold)} дБм` },
             { label: 'Количество полезных сигналов под помехами:', value: data.channels_w_noises ?? 0 }
         ];
 
@@ -524,67 +542,120 @@ class SessionsPanel extends Component {
 
         if (usefulSignals && usefulSignals.length > 0) {
             const signalsSection = this.createElement('div', { className: 'signals-section' });
-            const signalsTitle = this.createElement('h5', {}, `Маски полезных сигналов (${usefulSignals.length})`);
+
+            const signalsTitle = this.createElement('h5', {},
+                `Маски полезных сигналов` +
+                (this.selectedSession?.usg ? ` | Объект защиты: ${this.selectedSession.usg}` : '')
+            );
             signalsSection.appendChild(signalsTitle);
 
-            const signalsTable = this.createElement('table', { className: 'signals-table' });
-            const signalsThead = this.createElement('thead');
-            const signalsHeaderRow = this.createElement('tr');
-            ['f1 (МГц)', 'f2 (МГц)', 'max (дБ)'].forEach(text => {
-                const th = this.createElement('th', {}, text);
-                signalsHeaderRow.appendChild(th);
-            });
-            signalsThead.appendChild(signalsHeaderRow);
-            signalsTable.appendChild(signalsThead);
+            const signalsCountLabel = this.createElement('div', { className: 'signals-count-label' },
+                `Сигналов в маске: ${usefulSignals.length}`
+            );
+            signalsSection.appendChild(signalsCountLabel);
 
-            const signalsTbody = this.createElement('tbody');
-            usefulSignals.forEach(signal => {
-                const row = this.createElement('tr');
-                const td1 = this.createElement('td', {}, this.formatNumber(signal.f1));
-                const td2 = this.createElement('td', {}, this.formatNumber(signal.f2));
-                const td3 = this.createElement('td', {}, this.formatNumber(signal.max));
-                row.appendChild(td1);
-                row.appendChild(td2);
-                row.appendChild(td3);
-                signalsTbody.appendChild(row);
-            });
-            signalsTable.appendChild(signalsTbody);
+            const signalsTable = this.renderSignalsTable(usefulSignals);
             signalsSection.appendChild(signalsTable);
             container.appendChild(signalsSection);
         }
 
         if (realNoises && realNoises.length > 0) {
             const noisesSection = this.createElement('div', { className: 'noises-section' });
-            const noisesTitle = this.createElement('h5', {}, `Помехи (${realNoises.length})`);
+
+            const noisesTitle = this.createElement('h5', {}, `Помехи`);
             noisesSection.appendChild(noisesTitle);
 
-            const noisesTable = this.createElement('table', { className: 'noises-table' });
-            const noisesThead = this.createElement('thead');
-            const noisesHeaderRow = this.createElement('tr');
-            ['f1 (МГц)', 'f2 (МГц)', 'max (дБ)'].forEach(text => {
-                const th = this.createElement('th', {}, text);
-                noisesHeaderRow.appendChild(th);
-            });
-            noisesThead.appendChild(noisesHeaderRow);
-            noisesTable.appendChild(noisesThead);
+            const noisesCountLabel = this.createElement('div', { className: 'noises-count-label' },
+                `Количество помех: ${realNoises.length}`
+            );
+            noisesSection.appendChild(noisesCountLabel);
 
-            const noisesTbody = this.createElement('tbody');
-            realNoises.forEach(noise => {
-                const row = this.createElement('tr');
-                const td1 = this.createElement('td', {}, this.formatNumber(noise.f1));
-                const td2 = this.createElement('td', {}, this.formatNumber(noise.f2));
-                const td3 = this.createElement('td', {}, this.formatNumber(noise.max));
-                row.appendChild(td1);
-                row.appendChild(td2);
-                row.appendChild(td3);
-                noisesTbody.appendChild(row);
-            });
-            noisesTable.appendChild(noisesTbody);
+            const noisesTable = this.renderNoisesTable(realNoises);
             noisesSection.appendChild(noisesTable);
             container.appendChild(noisesSection);
         }
 
         return container;
+    }
+
+    /**
+     * Рендерит таблицу полезных сигналов с 4 колонками (округление до 6 знаков)
+     */
+    renderSignalsTable(signals) {
+        const table = this.createElement('table', { className: 'signals-table' });
+
+        const thead = this.createElement('thead');
+        const headerRow = this.createElement('tr');
+        ['f1 (МГц)', 'f2 (МГц)', 'max (дБм)', 'max (дБ(мкВ/м))'].forEach(text => {
+            const th = this.createElement('th', {}, text);
+            headerRow.appendChild(th);
+        });
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
+
+        const tbody = this.createElement('tbody');
+        signals.forEach(signal => {
+            const row = this.createElement('tr');
+
+            const avgFreq = (signal.f1 + signal.f2) / 2;
+            const maxDb = signal.max;
+            const maxDbMkvM = this.convertDbmToDbMkvM(maxDb, avgFreq);
+
+            // Округление до 6 знаков
+            const td1 = this.createElement('td', {}, this.formatNumber(signal.f1, 6));
+            const td2 = this.createElement('td', {}, this.formatNumber(signal.f2, 6));
+            const td3 = this.createElement('td', {}, this.formatNumber(maxDb, 6));
+            const td4 = this.createElement('td', {}, typeof maxDbMkvM === 'string' ? maxDbMkvM : this.formatNumber(maxDbMkvM, 6));
+
+            row.appendChild(td1);
+            row.appendChild(td2);
+            row.appendChild(td3);
+            row.appendChild(td4);
+            tbody.appendChild(row);
+        });
+        table.appendChild(tbody);
+
+        return table;
+    }
+
+    /**
+     * Рендерит таблицу помех с 4 колонками (округление до 6 знаков)
+     */
+    renderNoisesTable(noises) {
+        const table = this.createElement('table', { className: 'noises-table' });
+
+        const thead = this.createElement('thead');
+        const headerRow = this.createElement('tr');
+        ['f1 (МГц)', 'f2 (МГц)', 'max (дБм)', 'max (дБ(мкВ/м))'].forEach(text => {
+            const th = this.createElement('th', {}, text);
+            headerRow.appendChild(th);
+        });
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
+
+        const tbody = this.createElement('tbody');
+        noises.forEach(noise => {
+            const row = this.createElement('tr');
+
+            const avgFreq = (noise.f1 + noise.f2) / 2;
+            const maxDb = noise.max;
+            const maxDbMkvM = this.convertDbmToDbMkvM(maxDb, avgFreq);
+
+            // Округление до 6 знаков
+            const td1 = this.createElement('td', {}, this.formatNumber(noise.f1, 6));
+            const td2 = this.createElement('td', {}, this.formatNumber(noise.f2, 6));
+            const td3 = this.createElement('td', {}, this.formatNumber(maxDb, 6));
+            const td4 = this.createElement('td', {}, typeof maxDbMkvM === 'string' ? maxDbMkvM : this.formatNumber(maxDbMkvM, 6));
+
+            row.appendChild(td1);
+            row.appendChild(td2);
+            row.appendChild(td3);
+            row.appendChild(td4);
+            tbody.appendChild(row);
+        });
+        table.appendChild(tbody);
+
+        return table;
     }
 
     renderSessionsList() {
@@ -899,6 +970,14 @@ class SessionsPanel extends Component {
                 border-radius: 6px;
                 border: 1px solid black;
                 min-height: 300px;
+            }
+            
+            .signals-count-label,
+            .noises-count-label {
+                font-size: 16px;
+                color: black;
+                margin: 4px 0 8px 0;
+                font-weight: 500;
             }
             
             @media (max-width: 768px) {

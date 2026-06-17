@@ -107,7 +107,7 @@ export class SpectrumChart {
     showTooltip(clientX, clientY, dataPoint) {
         this.tooltip.innerHTML = `
             <div style="font-weight: bold; margin-bottom: 4px;">${dataPoint.label} МГц</div>
-            <div style="color: #64b5f6;">Амплитуда: ${dataPoint.value.toFixed(2)} дБ</div>
+            <div style="color: #64b5f6;">Амплитуда: ${dataPoint.value.toFixed(2)} дБм</div>
         `;
         this.tooltip.style.display = 'block';
 
@@ -148,6 +148,7 @@ export class SpectrumChart {
         this.drawGrid(padding, chartWidth, chartHeight);
         this.drawRectangles(padding, chartWidth, chartHeight);
         this.drawData(padding, chartWidth, chartHeight);
+        this.drawThreshold(padding, chartWidth, chartHeight);
         this.drawLabels(padding, chartWidth, chartHeight);
     }
 
@@ -202,6 +203,63 @@ export class SpectrumChart {
         this.ctx.restore();
     }
 
+    drawThreshold(padding, chartWidth, chartHeight) {
+        const threshold = this.config.threshold;
+        if (threshold === undefined || threshold === null) return;
+
+        const data = this.config.data;
+        if (!data.length) return;
+
+        const minValue = Math.min(...data);
+        const maxValue = Math.max(...data);
+        const valueRange = maxValue - minValue || 1;
+
+        let normalizedY;
+        let displayValue = threshold;
+
+        if (threshold > maxValue) {
+            normalizedY = 1 + 0.05;
+            displayValue = threshold;
+        } else if (threshold < minValue) {
+            normalizedY = -0.05;
+            displayValue = threshold;
+        } else {
+            normalizedY = (threshold - minValue) / valueRange;
+        }
+
+        const y = padding.top + chartHeight - normalizedY * chartHeight;
+        const clampedY = Math.max(padding.top, Math.min(padding.top + chartHeight, y));
+
+        this.ctx.save();
+        this.ctx.strokeStyle = '#ffc400';
+        this.ctx.lineWidth = 3;
+        this.ctx.setLineDash([6, 4]);
+
+        this.ctx.beginPath();
+        this.ctx.moveTo(padding.left, clampedY);
+        this.ctx.lineTo(padding.left + chartWidth, clampedY);
+        this.ctx.stroke();
+
+        this.ctx.setLineDash([]);
+        this.ctx.fillStyle = '#ffc400';
+        this.ctx.font = 'bold 11px sans-serif';
+        this.ctx.textAlign = 'left';
+
+        const labelX = padding.left + 8;
+        let labelY = clampedY - 8;
+
+        if (clampedY - padding.top < 25) {
+            labelY = clampedY + 16;
+        }
+        if (padding.top + chartHeight - clampedY < 25) {
+            labelY = clampedY - 8;
+        }
+
+        this.ctx.fillText(`Порог: ${displayValue.toFixed(2)} дБм`, labelX, labelY);
+
+        this.ctx.restore();
+    }
+
     drawRectangles(padding, chartWidth, chartHeight) {
         const { usefulSignals = [], noises = [], f1MHz, f2MHz, data } = this.config;
 
@@ -240,20 +298,17 @@ export class SpectrumChart {
                 rectHeight = padding.top + chartHeight - yTop;
             }
 
-            // Рисуем заливку
             this.ctx.save();
             this.ctx.globalAlpha = 0.25;
             this.ctx.fillStyle = color;
             this.ctx.fillRect(rectX, yTop, rectWidth, rectHeight);
 
-            // Рисуем сплошную рамку (убрали пунктир)
             this.ctx.globalAlpha = 0.8;
             this.ctx.strokeStyle = color;
             this.ctx.lineWidth = 1.5;
-            this.ctx.setLineDash([]); // Сплошная линия
+            this.ctx.setLineDash([]);
             this.ctx.strokeRect(rectX, yTop, rectWidth, rectHeight);
 
-            // Подпись
             if (rectWidth > 30) {
                 this.ctx.globalAlpha = 0.9;
                 this.ctx.font = '10px sans-serif';
@@ -319,12 +374,13 @@ export class SpectrumChart {
 
     drawLabels(padding, chartWidth, chartHeight) {
         const data = this.config.data;
-        const { f1MHz, f2MHz } = this.config;
+        const { f1MHz, f2MHz, threshold } = this.config;
 
         if (!data.length) return;
 
         const minValue = Math.min(...data);
         const maxValue = Math.max(...data);
+        const valueRange = maxValue - minValue || 1;
 
         const xTickCount = 8;
         for (let i = 0; i <= xTickCount; i++) {
@@ -340,17 +396,41 @@ export class SpectrumChart {
         }
 
         const yTickCount = 5;
+        const yTicks = [];
+
         for (let i = 0; i <= yTickCount; i++) {
             const value = minValue + (maxValue - minValue) * (i / yTickCount);
-            const y = padding.top + chartHeight - (chartHeight / yTickCount) * i;
+            yTicks.push(value);
+        }
+
+        if (threshold !== undefined && threshold !== null) {
+            const thresholdExists = yTicks.some(v => Math.abs(v - threshold) < (valueRange / yTickCount / 4));
+            if (!thresholdExists && threshold >= minValue && threshold <= maxValue) {
+                yTicks.push(threshold);
+                yTicks.sort((a, b) => a - b);
+            }
+        }
+
+        yTicks.forEach(value => {
+            const normalizedY = (value - minValue) / valueRange;
+            const y = padding.top + chartHeight - normalizedY * chartHeight;
+
+            if (y < padding.top - 5 || y > padding.top + chartHeight + 5) return;
 
             this.ctx.save();
-            this.ctx.fillStyle = 'black';
-            this.ctx.font = '11px sans-serif';
+
+            if (threshold !== undefined && threshold !== null && Math.abs(value - threshold) < 0.001) {
+                this.ctx.fillStyle = '#ffc400';
+                this.ctx.font = 'bold 11px sans-serif';
+            } else {
+                this.ctx.fillStyle = 'black';
+                this.ctx.font = '11px sans-serif';
+            }
+
             this.ctx.textAlign = 'right';
             this.ctx.fillText(value.toFixed(1), padding.left - 8, y + 3);
             this.ctx.restore();
-        }
+        });
 
         this.ctx.save();
         this.ctx.fillStyle = '#333';
@@ -363,7 +443,7 @@ export class SpectrumChart {
         this.ctx.translate(20, padding.top + chartHeight / 2);
         this.ctx.rotate(-Math.PI / 2);
         this.ctx.textAlign = 'center';
-        this.ctx.fillText('Амплитуда (дБ)', 0, 0);
+        this.ctx.fillText('Амплитуда (дБм)', 0, 0);
         this.ctx.restore();
 
         this.ctx.restore();
