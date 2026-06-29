@@ -56,11 +56,16 @@ class Store {
                 isLoading: false,
                 error: null
             },
-            currentPage: '/'
+            currentPage: '/',
+            // === НОВОЕ: Состояние навигационного меню ===
+            navState: {
+                openSections: {} // { sectionId: true/false }
+            }
         };
 
         this.listeners = [];
         this.initDateRange();
+        this.initNavState();
     }
 
     initDateRange() {
@@ -78,6 +83,13 @@ class Store {
             startTime: this.getTimeForInput(startDate),
             endTime: this.getTimeForInput(endDate)
         };
+    }
+
+    // === НОВОЕ: Инициализация состояния навигации ===
+    initNavState() {
+        // По умолчанию все секции закрыты
+        // Активная секция будет открыта в NavPanel
+        this.state.navState.openSections = {};
     }
 
     getDateForInput(date) {
@@ -107,6 +119,27 @@ class Store {
             current = current[parts[i]];
         }
         current[parts[parts.length - 1]] = value;
+        this.notify();
+    }
+
+    // === НОВОЕ: Методы для работы с состоянием навигации ===
+    setNavSectionOpen(sectionId, isOpen) {
+        if (!this.state.navState.openSections) {
+            this.state.navState.openSections = {};
+        }
+        this.state.navState.openSections[sectionId] = isOpen;
+        this.notify();
+    }
+
+    getNavSectionOpen(sectionId) {
+        if (!this.state.navState.openSections) {
+            return false;
+        }
+        return this.state.navState.openSections[sectionId] === true;
+    }
+
+    resetNavState() {
+        this.state.navState.openSections = {};
         this.notify();
     }
 
