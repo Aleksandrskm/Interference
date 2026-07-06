@@ -9,7 +9,7 @@ const MENU_ITEMS = [
         id: 'section-status',
         label: 'Текущее состояние',
         children: [
-            { id: 'interference', label: 'Помеховая обстановка', to: '/interference', disabled: false },
+            { id: 'interference', label: 'ЭМ обстановка', to: '/interference', disabled: false },
         ]
     },
     // Раздел 2: Объект защиты
