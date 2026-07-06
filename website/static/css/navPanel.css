@@ -90,7 +90,7 @@
     color: #000; /* ЧЕРНЫЙ ТЕКСТ */
     font-weight: 700;
     cursor: pointer;
-    border-bottom: 1px solid #000; /* ЧЕРНАЯ ГРАНИЦА */
+    /*border-bottom: 1px solid #000; !* ЧЕРНАЯ ГРАНИЦА *!*/
     margin: 0;
     border-radius: 7px 7px 0 0;
     transition: all 0.2s ease;
@@ -101,7 +101,7 @@
 
 /* Когда details открыт - нижняя граница есть */
 .nav-section[open] > .nav-section-header {
-    border-bottom: 1px solid #000;
+    /*border-bottom: 1px solid #000;*/
     border-radius: 7px 7px 0 0;
 }
 
